@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 917723103974399941}
   m_Layer: 0
   m_Name: PlayerBall
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -169,7 +169,7 @@ MonoBehaviour:
   lineRenderer: {fileID: 6855974433471933006}
   wallLayer:
     serializedVersion: 2
-    m_Bits: 72
+    m_Bits: 200
   bottomWallLayer:
     serializedVersion: 2
     m_Bits: 64
@@ -177,6 +177,7 @@ MonoBehaviour:
   trajectoryDistance: 100
   rayStartOffset: 0.05
   ballSpeed: 9
+  bottomWallGap: 0.03
 --- !u!1001 &7039711220520819012
 PrefabInstance:
   m_ObjectHideFlags: 0

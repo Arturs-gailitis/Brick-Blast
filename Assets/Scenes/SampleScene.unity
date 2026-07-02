@@ -351,6 +351,7 @@ GameObject:
   - component: {fileID: 1138494231}
   - component: {fileID: 1138494230}
   - component: {fileID: 1138494232}
+  - component: {fileID: 1138494233}
   m_Layer: 0
   m_Name: SpawnInitialObjects
   m_TagString: Untagged
@@ -405,6 +406,28 @@ MonoBehaviour:
   bottomWall: {fileID: 6491611517059677051, guid: 7368c9df561ef3c4187f3a48e5d6cb8a, type: 3}
   sideWalls: {fileID: 722885930230346285, guid: 888bfe6078e0ec74eb70c8109e1ee6b4, type: 3}
   distanceFromWall: 0.05
+--- !u!114 &1138494233
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1138494229}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c18daaec68255794f89591e2380cfdd0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  brickPrefab: {fileID: 5845297711985745582, guid: dfcf4fde16325424ca57f3a31383abcf, type: 3}
+  walls:
+  - {fileID: 722885930230346285, guid: 888bfe6078e0ec74eb70c8109e1ee6b4, type: 3}
+  - {fileID: 8111543394360099883, guid: 22bb953019d1d3b49b66c04f100b7258, type: 3}
+  rows: 4
+  columns: 6
+  bricksToSpawn: 2
+  horizontalSpacing: 0.08
+  verticalSpacing: 0.08
+  distanceFromTopWall: 0.2
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
