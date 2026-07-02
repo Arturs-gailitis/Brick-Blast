@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 1758756986345057326}
   - component: {fileID: 5016204789971435142}
   - component: {fileID: 2886734656654901459}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: ButtomWall
   m_TagString: Untagged
   m_Icon: {fileID: 0}
