@@ -8,35 +8,41 @@ public class BallSpawner : MonoBehaviour
 
     [SerializeField] private float distanceFromWall = 0.1f;
 
-    private void Start()
+ private void Start()
+{
+    Collider2D bottomWallCollider = bottomWall.GetComponent<Collider2D>();
+    Collider2D leftWallCollider = GetWallCollider("LeftWall");
+    Collider2D rightWallCollider = GetWallCollider("RightWall");
+
+    CircleCollider2D ballCollider = playerBallPrefab.GetComponent<CircleCollider2D>();
+
+    float ballRadius = ballCollider.radius * playerBallPrefab.transform.localScale.x;
+
+    float minX = leftWallCollider.bounds.max.x + ballRadius;
+    float maxX = rightWallCollider.bounds.min.x - ballRadius;
+
+    float randomX = Random.Range(minX, maxX);
+
+    float spawnY = bottomWallCollider.bounds.max.y + ballRadius + distanceFromWall;
+
+    Vector3 spawnPosition = new Vector3(randomX, spawnY, 0f);
+
+    GameObject ball = Instantiate(playerBallPrefab);
+
+    ball.SetActive(false);
+    ball.transform.position = spawnPosition;
+
+    Rigidbody2D ballRigidbody = ball.GetComponent<Rigidbody2D>();
+
+    if (ballRigidbody != null)
     {
-        GameObject ball = Instantiate(playerBallPrefab);
-
-        Collider2D bottomWallCollider = bottomWall.GetComponent<Collider2D>();
-        Collider2D ballCollider = ball.GetComponent<Collider2D>();
-
-        Collider2D leftWallCollider = GetWallCollider("LeftWall");
-        Collider2D rightWallCollider = GetWallCollider("RightWall");
-
-        if (leftWallCollider == null || rightWallCollider == null)
-        {
-            return;
-        }
-
-        float ballHalfHeight = ballCollider.bounds.extents.y;
-        float ballHalfWidth = ballCollider.bounds.extents.x;
-
-        float minX = leftWallCollider.bounds.max.x + ballHalfWidth;
-        float maxX = rightWallCollider.bounds.min.x - ballHalfWidth;
-
-        float randomX = Random.Range(minX, maxX);
-
-        float spawnY = bottomWallCollider.bounds.max.y
-                       + ballHalfHeight
-                       + distanceFromWall;
-
-        ball.transform.position = new Vector3(randomX, spawnY, 0f);
+        ballRigidbody.position = spawnPosition;
+        ballRigidbody.linearVelocity = Vector2.zero;
+        ballRigidbody.angularVelocity = 0f;
     }
+
+    ball.SetActive(true);
+}
 
     private Collider2D GetWallCollider(string wallName)
     {
