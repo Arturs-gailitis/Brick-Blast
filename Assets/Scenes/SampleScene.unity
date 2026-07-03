@@ -423,13 +423,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   brickPrefab: {fileID: 5845297711985745582, guid: dfcf4fde16325424ca57f3a31383abcf, type: 3}
   brickConfigReader: {fileID: 1138494234}
-  selectedLevel: 1
   walls:
   - {fileID: 722885930230346285, guid: 888bfe6078e0ec74eb70c8109e1ee6b4, type: 3}
   - {fileID: 8111543394360099883, guid: 22bb953019d1d3b49b66c04f100b7258, type: 3}
   horizontalSpacing: 0.08
   verticalSpacing: 0.08
   distanceFromTopWall: 0.5
+  horizontalOffset: 0.2
 --- !u!114 &1138494234
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -7,9 +7,6 @@ public class BrickSpawner : MonoBehaviour
     [SerializeField] private GameObject brickPrefab;
     [SerializeField] private BrickConfigReader brickConfigReader;
 
-    [Header("Level")]
-    [SerializeField] [Min(1)] private int selectedLevel = 1;
-
     [Header("Walls")]
     [SerializeField] private Transform[] walls;
 
@@ -17,6 +14,7 @@ public class BrickSpawner : MonoBehaviour
     [SerializeField] private float horizontalSpacing = 0.08f;
     [SerializeField] private float verticalSpacing = 0.08f;
     [SerializeField] private float distanceFromTopWall = 0.5f;
+    [SerializeField] private float horizontalOffset = 0.15f;
 
     private Transform bricksParent;
 
@@ -39,8 +37,6 @@ public class BrickSpawner : MonoBehaviour
     public int SpawnLevel(int level)
     {
         ClearBricks();
-
-        selectedLevel = level;
 
         if (brickPrefab == null || brickConfigReader == null)
         {
@@ -87,7 +83,8 @@ public class BrickSpawner : MonoBehaviour
             return 0;
         }
 
-        float firstBrickX = (leftWall.bounds.max.x + rightWall.bounds.min.x) / 2f - gridWidth / 2f + brickWidth / 2f;
+        float firstBrickX = (leftWall.bounds.max.x + rightWall.bounds.min.x) / 2f - gridWidth / 2f + brickWidth / 2f 
+            + horizontalOffset;
 
         float firstBrickY = topWall.bounds.min.y - distanceFromTopWall - brickHeight / 2f;
 
