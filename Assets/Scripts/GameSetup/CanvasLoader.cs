@@ -9,7 +9,6 @@ public class CanvasLoader : MonoBehaviour
     {
         if (CanvasPrefab == null)
         {
-            Debug.LogWarning("Score Canvas prefab nav pievienots.");
             return;
         }
 

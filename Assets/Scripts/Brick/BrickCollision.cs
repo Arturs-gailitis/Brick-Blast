@@ -32,19 +32,9 @@ public class BrickCollision : MonoBehaviour
         UpdateHealthText();
     }
 
-    public int GetScore()
-    {
-        return score;
-    }
-
-    public string GetBlockType()
-    {
-        return blockType;
-    }
-
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (!collision.collider.CompareTag("Player"))
+        if (isDestroyed || !collision.collider.CompareTag("Player"))
         {
             return;
         }
@@ -54,36 +44,34 @@ public class BrickCollision : MonoBehaviour
 
     private void TakeHit()
     {
-        if (isDestroyed)
-        {
-            return;
-        }
-
         health--;
 
-        if (health <= 0)
+        if (health > 0)
         {
-            isDestroyed = true;
-
-            if (ScoreManager.Instance != null)
-            {
-                ScoreManager.Instance.AddScore(score);
-            }
-
-            Destroy(gameObject);
+            UpdateHealthText();
             return;
         }
 
-        UpdateHealthText();
+        isDestroyed = true;
+
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.AddScore(score);
+        }
+
+        if (LevelManager.Instance != null)
+        {
+            LevelManager.Instance.BrickDestroyed();
+        }
+
+        Destroy(gameObject);
     }
 
     private void UpdateHealthText()
     {
-        if (healthText == null)
+        if (healthText != null)
         {
-            return;
+            healthText.text = health.ToString();
         }
-
-        healthText.text = health.ToString();
     }
 }

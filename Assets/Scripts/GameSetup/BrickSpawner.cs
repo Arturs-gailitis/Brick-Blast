@@ -1,10 +1,9 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class BrickSpawner : MonoBehaviour
 {
-    [Header("Reference")]
+    [Header("References")]
     [SerializeField] private GameObject brickPrefab;
     [SerializeField] private BrickConfigReader brickConfigReader;
 
@@ -17,51 +16,130 @@ public class BrickSpawner : MonoBehaviour
     [Header("Spacing")]
     [SerializeField] private float horizontalSpacing = 0.08f;
     [SerializeField] private float verticalSpacing = 0.08f;
-    [SerializeField] private float distanceFromTopWall = 0.2f;
+    [SerializeField] private float distanceFromTopWall = 0.5f;
 
-    private IEnumerator Start()
+    private Transform bricksParent;
+
+    private void Awake()
     {
-        yield return null;
-
-        SpawnBricksFromCsv();
+        GameObject parentObject = new GameObject("Bricks");
+        bricksParent = parentObject.transform;
     }
 
-    private void SpawnBricksFromCsv()
+    public bool LevelExists(int level)
     {
-        if (brickPrefab == null)
-        {
-            return;
-        }
-
         if (brickConfigReader == null)
         {
-            return;
+            return false;
         }
 
-        if (walls == null || walls.Length < 2 || walls[0] == null || walls[1] == null)
+        return brickConfigReader.GetBricksForLevel(level).Count > 0;
+    }
+
+    public int SpawnLevel(int level)
+    {
+        ClearBricks();
+
+        selectedLevel = level;
+
+        if (brickPrefab == null || brickConfigReader == null)
         {
-            return;
+            return 0;
         }
 
-        List<BrickConfig> bricksForLevel = brickConfigReader.GetBricksForLevel(selectedLevel);
-
-        if (bricksForLevel.Count == 0)
+        if (!TryGetWalls(out Collider2D leftWall, out Collider2D rightWall, out Collider2D topWall))
         {
-            return;
+            return 0;
         }
 
-        Transform sideWalls = walls[0];
-        Transform topWall = walls[1];
+        BoxCollider2D brickCollider = brickPrefab.GetComponent<BoxCollider2D>();
 
-        Collider2D[] sideWallColliders = sideWalls.GetComponentsInChildren<Collider2D>();
+        if (brickCollider == null)
+        {
+            return 0;
+        }
+
+        List<BrickConfig> levelBricks = brickConfigReader.GetBricksForLevel(level);
+
+        if (levelBricks.Count == 0)
+        {
+            return 0;
+        }
+
+        float brickWidth = brickCollider.size.x * Mathf.Abs(brickPrefab.transform.localScale.x);
+        float brickHeight = brickCollider.size.y * Mathf.Abs(brickPrefab.transform.localScale.y);
+
+        int largestColumn = 0;
+
+        foreach (BrickConfig brickConfig in levelBricks)
+        {
+            largestColumn = Mathf.Max(largestColumn, brickConfig.column);
+        }
+
+        int gridColumns = largestColumn + 1;
+
+        float gridWidth = gridColumns * brickWidth + (gridColumns - 1) * horizontalSpacing;
+
+        float availableWidth = rightWall.bounds.min.x - leftWall.bounds.max.x;
+
+        if (gridWidth > availableWidth)
+        {
+            return 0;
+        }
+
+        float firstBrickX = (leftWall.bounds.max.x + rightWall.bounds.min.x) / 2f - gridWidth / 2f + brickWidth / 2f;
+
+        float firstBrickY = topWall.bounds.min.y - distanceFromTopWall - brickHeight / 2f;
+
+        int spawnedBricks = 0;
+
+        foreach (BrickConfig brickConfig in levelBricks)
+        {
+            float x = firstBrickX + brickConfig.column * (brickWidth + horizontalSpacing);
+
+            float y = firstBrickY - brickConfig.row * (brickHeight + verticalSpacing);
+
+            GameObject newBrick = Instantiate(brickPrefab, new Vector3(x, y, 0f), Quaternion.identity, bricksParent);
+
+            BrickCollision brickCollision = newBrick.GetComponent<BrickCollision>();
+
+            if (brickCollision == null)
+            {
+                Destroy(newBrick);
+                continue;
+            }
+
+            newBrick.name = "Brick_" + level + "_" + brickConfig.row + "_" + brickConfig.column;
+
+            brickCollision.Configure(brickConfig);
+            ApplyColor(newBrick, brickConfig.colorHex);
+
+            spawnedBricks++;
+        }
+
+        return spawnedBricks;
+    }
+
+    private bool TryGetWalls( out Collider2D leftWall, out Collider2D rightWall, out Collider2D topWall)
+    {
+        leftWall = null;
+        rightWall = null;
+        topWall = null;
+
+        if (walls == null || walls.Length < 2)
+        {
+            return false;
+        }
+
+        Collider2D[] sideWallColliders = walls[0].GetComponentsInChildren<Collider2D>();
 
         if (sideWallColliders.Length < 2)
         {
-            return;
+            return false;
         }
 
-        Collider2D leftWall = sideWallColliders[0];
-        Collider2D rightWall = sideWallColliders[1];
+        leftWall = sideWallColliders[0];
+        rightWall = sideWallColliders[1];
 
         if (leftWall.bounds.center.x > rightWall.bounds.center.x)
         {
@@ -70,89 +148,41 @@ public class BrickSpawner : MonoBehaviour
             rightWall = temporaryWall;
         }
 
-        Collider2D topWallCollider = topWall.GetComponent<Collider2D>();
+        topWall = walls[1].GetComponent<Collider2D>();
 
-        if (topWallCollider == null)
+        if (topWall == null)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private void ClearBricks()
+    {
+        if (bricksParent == null)
         {
             return;
         }
 
-        BoxCollider2D brickCollider = brickPrefab.GetComponent<BoxCollider2D>();
-
-        if (brickCollider == null)
+        for (int i = bricksParent.childCount - 1; i >= 0; i--)
         {
-            return;
-        }
-
-        float brickWidth = brickCollider.size.x * Mathf.Abs(brickPrefab.transform.localScale.x);
-
-        float brickHeight = brickCollider.size.y * Mathf.Abs(brickPrefab.transform.localScale.y);
-
-        int numberOfColumns = GetRequiredColumnCount(bricksForLevel);
-
-        float availableWidth = rightWall.bounds.min.x - leftWall.bounds.max.x;
-
-        float gridWidth = numberOfColumns * brickWidth + (numberOfColumns - 1) * horizontalSpacing;
-
-        if (gridWidth > availableWidth)
-        {
-            return;
-        }
-
-        float firstBrickX = (leftWall.bounds.max.x + rightWall.bounds.min.x) / 2f - gridWidth / 2f + brickWidth / 2f;
-
-        float firstBrickY = topWallCollider.bounds.min.y - distanceFromTopWall - brickHeight / 2f;
-
-        GameObject bricksParent = new GameObject($"Bricks_Level_{selectedLevel}");
-
-        foreach (BrickConfig brickConfig in bricksForLevel)
-        {
-            if (brickConfig.row < 0 || brickConfig.column < 0)
-            {
-                continue;
-            }
-
-            float x = firstBrickX + brickConfig.column * (brickWidth + horizontalSpacing);
-
-            float y = firstBrickY - brickConfig.row * (brickHeight + verticalSpacing);
-
-            GameObject newBrick = Instantiate(
-                brickPrefab,
-                new Vector3(x, y, 0f),
-                Quaternion.identity,
-                bricksParent.transform
-            );
-
-            ConfigureBrick(newBrick, brickConfig);
+            Destroy(bricksParent.GetChild(i).gameObject);
         }
     }
 
-    private int GetRequiredColumnCount(List<BrickConfig> bricksForLevel)
+    private void ApplyColor(GameObject brick, string colorHex)
     {
-        int largestColumn = 0;
+        SpriteRenderer spriteRenderer = brick.GetComponent<SpriteRenderer>();
 
-        foreach (BrickConfig brickConfig in bricksForLevel)
+        if (spriteRenderer == null)
         {
-            largestColumn = Mathf.Max(largestColumn, brickConfig.column);
+            return;
         }
 
-        return largestColumn + 1;
-    }
-
-    private void ConfigureBrick(GameObject newBrick, BrickConfig brickConfig)
-    {
-        BrickCollision brickCollision = newBrick.GetComponent<BrickCollision>();
-
-        if (brickCollision != null)
+        if (ColorUtility.TryParseHtmlString(colorHex, out Color color))
         {
-            brickCollision.Configure(brickConfig);
-        }
-
-        SpriteRenderer spriteRenderer = newBrick.GetComponent<SpriteRenderer>();
-
-        if (spriteRenderer != null && ColorUtility.TryParseHtmlString(brickConfig.colorHex, out Color brickColor))
-        {
-            spriteRenderer.color = brickColor;
+            spriteRenderer.color = color;
         }
     }
 }
