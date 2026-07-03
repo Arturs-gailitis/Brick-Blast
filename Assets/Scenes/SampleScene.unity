@@ -429,7 +429,7 @@ MonoBehaviour:
   horizontalSpacing: 0.08
   verticalSpacing: 0.08
   distanceFromTopWall: 0.5
-  horizontalOffset: 0.2
+  horizontalOffset: 0.25
 --- !u!114 &1138494234
 MonoBehaviour:
   m_ObjectHideFlags: 0
