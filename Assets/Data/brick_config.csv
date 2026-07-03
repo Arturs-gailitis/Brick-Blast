@@ -1,0 +1,13 @@
+level,row,column,hitPoints,score,blockType,colorHex
+1,0,0,1,10,Normal,#4CAF50
+1,0,2,2,20,Strong,#2196F3
+1,0,5,3,30,Hard,#FF9800
+1,1,1,1,10,Normal,#4CAF50
+1,1,4,2,20,Strong,#2196F3
+1,2,3,5,50,Boss,#F44336
+2,0,1,2,20,Strong,#2196F3
+2,0,3,3,30,Hard,#FF9800
+2,0,6,5,50,Boss,#F44336
+2,1,0,1,10,Normal,#4CAF50
+2,1,2,2,20,Strong,#2196F3
+2,1,5,3,30,Hard,#FF9800

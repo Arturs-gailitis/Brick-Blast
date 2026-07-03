@@ -6,14 +6,13 @@ public class BrickSpawner : MonoBehaviour
 {
     [Header("Reference")]
     [SerializeField] private GameObject brickPrefab;
+    [SerializeField] private BrickConfigReader brickConfigReader;
+
+    [Header("Level")]
+    [SerializeField] [Min(1)] private int selectedLevel = 1;
 
     [Header("Walls")]
     [SerializeField] private Transform[] walls;
-
-    [Header("Potential Block Places")]
-    [SerializeField] private int rows = 4;
-    [SerializeField] private int columns = 6;
-    [SerializeField] private int bricksToSpawn = 2;
 
     [Header("Spacing")]
     [SerializeField] private float horizontalSpacing = 0.08f;
@@ -24,17 +23,29 @@ public class BrickSpawner : MonoBehaviour
     {
         yield return null;
 
-        SpawnBricks();
+        SpawnBricksFromCsv();
     }
 
-    private void SpawnBricks()
+    private void SpawnBricksFromCsv()
     {
         if (brickPrefab == null)
         {
             return;
         }
 
-        if (walls == null || walls.Length < 2)
+        if (brickConfigReader == null)
+        {
+            return;
+        }
+
+        if (walls == null || walls.Length < 2 || walls[0] == null || walls[1] == null)
+        {
+            return;
+        }
+
+        List<BrickConfig> bricksForLevel = brickConfigReader.GetBricksForLevel(selectedLevel);
+
+        if (bricksForLevel.Count == 0)
         {
             return;
         }
@@ -77,9 +88,11 @@ public class BrickSpawner : MonoBehaviour
 
         float brickHeight = brickCollider.size.y * Mathf.Abs(brickPrefab.transform.localScale.y);
 
+        int numberOfColumns = GetRequiredColumnCount(bricksForLevel);
+
         float availableWidth = rightWall.bounds.min.x - leftWall.bounds.max.x;
 
-        float gridWidth = columns * brickWidth + (columns - 1) * horizontalSpacing;
+        float gridWidth = numberOfColumns * brickWidth + (numberOfColumns - 1) * horizontalSpacing;
 
         if (gridWidth > availableWidth)
         {
@@ -90,33 +103,56 @@ public class BrickSpawner : MonoBehaviour
 
         float firstBrickY = topWallCollider.bounds.min.y - distanceFromTopWall - brickHeight / 2f;
 
-        GameObject bricksParent = new GameObject("Bricks");
+        GameObject bricksParent = new GameObject($"Bricks_Level_{selectedLevel}");
 
-        List<Vector2Int> availablePositions = new List<Vector2Int>();
-
-        for (int row = 0; row < rows; row++)
+        foreach (BrickConfig brickConfig in bricksForLevel)
         {
-            for (int column = 0; column < columns; column++)
+            if (brickConfig.row < 0 || brickConfig.column < 0)
             {
-                availablePositions.Add(new Vector2Int(row, column));
+                continue;
             }
+
+            float x = firstBrickX + brickConfig.column * (brickWidth + horizontalSpacing);
+
+            float y = firstBrickY - brickConfig.row * (brickHeight + verticalSpacing);
+
+            GameObject newBrick = Instantiate(
+                brickPrefab,
+                new Vector3(x, y, 0f),
+                Quaternion.identity,
+                bricksParent.transform
+            );
+
+            ConfigureBrick(newBrick, brickConfig);
+        }
+    }
+
+    private int GetRequiredColumnCount(List<BrickConfig> bricksForLevel)
+    {
+        int largestColumn = 0;
+
+        foreach (BrickConfig brickConfig in bricksForLevel)
+        {
+            largestColumn = Mathf.Max(largestColumn, brickConfig.column);
         }
 
-        int maximumBricks = Mathf.Min(bricksToSpawn, availablePositions.Count);
+        return largestColumn + 1;
+    }
 
-        for (int i = 0; i < maximumBricks; i++)
+    private void ConfigureBrick(GameObject newBrick, BrickConfig brickConfig)
+    {
+        BrickCollision brickCollision = newBrick.GetComponent<BrickCollision>();
+
+        if (brickCollision != null)
         {
-            int randomIndex = Random.Range(0, availablePositions.Count);
+            brickCollision.Configure(brickConfig);
+        }
 
-            Vector2Int selectedPosition = availablePositions[randomIndex];
+        SpriteRenderer spriteRenderer = newBrick.GetComponent<SpriteRenderer>();
 
-            availablePositions.RemoveAt(randomIndex);
-
-            float x = firstBrickX + selectedPosition.y * (brickWidth + horizontalSpacing);
-
-            float y = firstBrickY - selectedPosition.x * (brickHeight + verticalSpacing);
-
-            Instantiate(brickPrefab, new Vector3(x, y, 0f), Quaternion.identity, bricksParent.transform);
+        if (spriteRenderer != null && ColorUtility.TryParseHtmlString(brickConfig.colorHex, out Color brickColor))
+        {
+            spriteRenderer.color = brickColor;
         }
     }
 }
