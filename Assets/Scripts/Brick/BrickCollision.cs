@@ -39,6 +39,13 @@ public class BrickCollision : MonoBehaviour
             return;
         }
 
+        PlayerBallTrajectory ballTrajectory = collision.collider.GetComponent<PlayerBallTrajectory>();
+
+        if (ballTrajectory != null)
+        {
+            ballTrajectory.RegisterBrickHit();
+        }
+
         TakeHit();
     }
 

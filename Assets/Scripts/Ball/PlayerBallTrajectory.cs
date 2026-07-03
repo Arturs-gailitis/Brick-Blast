@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BallTrajectory : MonoBehaviour
+public class PlayerBallTrajectory : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private LineRenderer lineRenderer;
@@ -17,11 +17,17 @@ public class BallTrajectory : MonoBehaviour
     [SerializeField] private float ballSpeed = 10f;
     [SerializeField] private float bottomWallGap = 0.03f;
 
+    [Header("No brick hit reset")]
+    [SerializeField] private float noBrickHitTimeLimit = 6f;
+
     private Rigidbody2D ballRigidbody;
     private CircleCollider2D ballCollider;
     private Camera mainCamera;
 
     private bool canShoot = true;
+
+    private Vector2 launchPosition;
+    private float timeSinceLastBrickHit;
 
     private void Awake()
     {
@@ -43,6 +49,8 @@ public class BallTrajectory : MonoBehaviour
 
     private void Update()
     {
+        CheckNoBrickHitTimer();
+
         if (!canShoot)
         {
             HideTrajectory();
@@ -78,9 +86,49 @@ public class BallTrajectory : MonoBehaviour
     {
         canShoot = false;
 
+        launchPosition = ballRigidbody.position;
+
+        timeSinceLastBrickHit = 0f;
+
         ballRigidbody.WakeUp();
         ballRigidbody.linearVelocity = direction * ballSpeed;
         ballRigidbody.angularVelocity = 0f;
+
+        HideTrajectory();
+    }
+
+    private void CheckNoBrickHitTimer()
+    {
+        if (canShoot)
+        {
+            return;
+        }
+
+        timeSinceLastBrickHit += Time.deltaTime;
+
+        if (timeSinceLastBrickHit >= noBrickHitTimeLimit)
+        {
+            ReturnBallToLaunchPosition();
+        }
+    }
+
+    public void RegisterBrickHit()
+    {
+        timeSinceLastBrickHit = 0f;
+    }
+
+    private void ReturnBallToLaunchPosition()
+    {
+        ballRigidbody.linearVelocity = Vector2.zero;
+        ballRigidbody.angularVelocity = 0f;
+
+        ballRigidbody.position = launchPosition;
+        transform.position = launchPosition;
+
+        ballRigidbody.WakeUp();
+
+        canShoot = true;
+        timeSinceLastBrickHit = 0f;
 
         HideTrajectory();
     }
@@ -96,7 +144,6 @@ public class BallTrajectory : MonoBehaviour
         ballRigidbody.angularVelocity = 0f;
 
         float ballHalfHeight = ballCollider.bounds.extents.y;
-
         float safeY = collision.collider.bounds.max.y + ballHalfHeight + bottomWallGap;
 
         Vector2 safePosition = ballRigidbody.position;
@@ -107,6 +154,8 @@ public class BallTrajectory : MonoBehaviour
         ballRigidbody.WakeUp();
 
         canShoot = true;
+        timeSinceLastBrickHit = 0f;
+
         HideTrajectory();
     }
 
@@ -123,7 +172,6 @@ public class BallTrajectory : MonoBehaviour
         float ballRadius = ballCollider.bounds.extents.x;
 
         Vector2 currentPosition = (Vector2)transform.position + startDirection * rayStartOffset;
-
         Vector2 currentDirection = startDirection;
 
         for (int i = 0; i < maxBounces; i++)
@@ -150,7 +198,6 @@ public class BallTrajectory : MonoBehaviour
             }
 
             currentDirection = Vector2.Reflect(currentDirection, hit.normal);
-
             currentPosition = hit.centroid + currentDirection * rayStartOffset;
         }
 
