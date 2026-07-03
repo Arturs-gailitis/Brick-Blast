@@ -11,6 +11,8 @@ public class BrickCollision : MonoBehaviour
     [Header("Reference")]
     [SerializeField] private TMP_Text healthText;
 
+    private bool isDestroyed;
+
     private void Awake()
     {
         UpdateHealthText();
@@ -52,10 +54,22 @@ public class BrickCollision : MonoBehaviour
 
     private void TakeHit()
     {
+        if (isDestroyed)
+        {
+            return;
+        }
+
         health--;
 
         if (health <= 0)
         {
+            isDestroyed = true;
+
+            if (ScoreManager.Instance != null)
+            {
+                ScoreManager.Instance.AddScore(score);
+            }
+
             Destroy(gameObject);
             return;
         }

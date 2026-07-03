@@ -177,6 +177,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   health: 3
+  score: 0
+  blockType: full
   healthText: {fileID: 6425629900885144110}
 --- !u!1001 &2238997974581505525
 PrefabInstance:
