@@ -29,6 +29,10 @@ public class PlayerBallTrajectory : MonoBehaviour
     private Vector2 launchPosition;
     private float timeSinceLastBrickHit;
 
+    private bool gameplayInputEnabled = true;
+    private bool waitForPointerRelease;
+    private int inputEnabledFrame;
+
     private void Awake()
     {
         if (lineRenderer == null)
@@ -49,6 +53,29 @@ public class PlayerBallTrajectory : MonoBehaviour
 
     private void Update()
     {
+        if (!gameplayInputEnabled)
+        {
+            HideTrajectory();
+            return;
+        }
+
+        if (waitForPointerRelease)
+        {
+            HideTrajectory();
+
+            if (Time.frameCount <= inputEnabledFrame)
+            {
+                return;
+            }
+
+        if (!IsPointerCurrentlyPressed())
+        {
+            waitForPointerRelease = false;
+        }
+
+        return;
+    }
+
         CheckNoBrickHitTimer();
 
         if (!canShoot)
@@ -267,15 +294,46 @@ public class PlayerBallTrajectory : MonoBehaviour
         float distanceToBallPlane = Mathf.Abs(mainCamera.transform.position.z - transform.position.z);
 
         Vector3 convertedPosition = mainCamera.ScreenToWorldPoint(
-            new Vector3(
-                screenPosition.x,
-                screenPosition.y,
-                distanceToBallPlane
-            )
+            new Vector3(screenPosition.x, screenPosition.y, distanceToBallPlane)
         );
 
         worldPosition = new Vector2(convertedPosition.x, convertedPosition.y);
 
         return true;
     }
+
+    public void SetGameplayInputEnabled(bool isEnabled)
+    {
+        gameplayInputEnabled = isEnabled;
+
+        if (isEnabled)
+        {
+            waitForPointerRelease = true;
+            inputEnabledFrame = Time.frameCount;
+        }
+        else
+        {
+            HideTrajectory();
+        }
+    }
+
+    public void PrepareForNextLevel()
+    {
+        ReturnBallToLaunchPosition();
+
+        gameplayInputEnabled = false;
+    }
+
+    private bool IsPointerCurrentlyPressed()
+    {
+        if (Input.touchCount > 0)
+        {
+            Touch touch = Input.GetTouch(0);
+
+            return touch.phase != TouchPhase.Ended && touch.phase != TouchPhase.Canceled;
+        }
+
+        return Input.GetMouseButton(0);
+    }
+    
 }

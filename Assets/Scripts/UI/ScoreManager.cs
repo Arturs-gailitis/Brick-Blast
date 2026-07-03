@@ -5,8 +5,9 @@ public class ScoreManager : MonoBehaviour
 {
     public static ScoreManager Instance { get; private set; }
 
-    [Header("UI reference")]
+    [Header("UI references")]
     [SerializeField] private TMP_Text scoreText;
+    [SerializeField] private TMP_Text levelText;
 
     public int CurrentScore { get; private set; }
 
@@ -19,6 +20,7 @@ public class ScoreManager : MonoBehaviour
         }
 
         Instance = this;
+
         UpdateScoreText();
     }
 
@@ -32,6 +34,16 @@ public class ScoreManager : MonoBehaviour
     {
         CurrentScore = 0;
         UpdateScoreText();
+    }
+
+    public void UpdateLevelText(int level)
+    {
+        if (levelText == null)
+        {
+            return;
+        }
+
+        levelText.text = "Level: " + level;
     }
 
     private void UpdateScoreText()

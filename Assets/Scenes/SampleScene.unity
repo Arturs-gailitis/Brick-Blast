@@ -470,7 +470,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   brickSpawner: {fileID: 1138494233}
   firstLevel: 1
-  nextLevelDelay: 0.7
 --- !u!1 &2000098363
 GameObject:
   m_ObjectHideFlags: 0
