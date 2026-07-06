@@ -63,6 +63,7 @@ public class BrickSpawner : MonoBehaviour
         }
 
         float brickWidth = brickCollider.size.x * Mathf.Abs(brickPrefab.transform.localScale.x);
+
         float brickHeight = brickCollider.size.y * Mathf.Abs(brickPrefab.transform.localScale.y);
 
         int largestColumn = 0;
@@ -109,7 +110,6 @@ public class BrickSpawner : MonoBehaviour
             newBrick.name = "Brick_" + level + "_" + brickConfig.row + "_" + brickConfig.column;
 
             brickCollision.Configure(brickConfig);
-            ApplyColor(newBrick, brickConfig.colorHex);
 
             spawnedBricks++;
         }
@@ -147,12 +147,7 @@ public class BrickSpawner : MonoBehaviour
 
         topWall = walls[1].GetComponent<Collider2D>();
 
-        if (topWall == null)
-        {
-            return false;
-        }
-
-        return true;
+        return topWall != null;
     }
 
     private void ClearBricks()
@@ -165,21 +160,6 @@ public class BrickSpawner : MonoBehaviour
         for (int i = bricksParent.childCount - 1; i >= 0; i--)
         {
             Destroy(bricksParent.GetChild(i).gameObject);
-        }
-    }
-
-    private void ApplyColor(GameObject brick, string colorHex)
-    {
-        SpriteRenderer spriteRenderer = brick.GetComponent<SpriteRenderer>();
-
-        if (spriteRenderer == null)
-        {
-            return;
-        }
-
-        if (ColorUtility.TryParseHtmlString(colorHex, out Color color))
-        {
-            spriteRenderer.color = color;
         }
     }
 }

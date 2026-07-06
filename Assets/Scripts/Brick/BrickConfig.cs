@@ -6,5 +6,4 @@ public class BrickConfig
     public int hitPoints;
     public int score;
     public string blockType;
-    public string colorHex;
 }

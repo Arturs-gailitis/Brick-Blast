@@ -11,11 +11,14 @@ public class BrickCollision : MonoBehaviour
     [Header("Reference")]
     [SerializeField] private TMP_Text healthText;
 
+    private SpriteRenderer spriteRenderer;
     private bool isDestroyed;
 
     private void Awake()
     {
-        UpdateHealthText();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+
+        UpdateBrickVisuals();
     }
 
     public void Configure(BrickConfig brickConfig)
@@ -29,7 +32,7 @@ public class BrickCollision : MonoBehaviour
         score = Mathf.Max(0, brickConfig.score);
         blockType = brickConfig.blockType;
 
-        UpdateHealthText();
+        UpdateBrickVisuals();
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -55,7 +58,7 @@ public class BrickCollision : MonoBehaviour
 
         if (health > 0)
         {
-            UpdateHealthText();
+            UpdateBrickVisuals();
             return;
         }
 
@@ -74,11 +77,52 @@ public class BrickCollision : MonoBehaviour
         Destroy(gameObject);
     }
 
+    private void UpdateBrickVisuals()
+    {
+        UpdateHealthText();
+        UpdateBrickColor();
+    }
+
     private void UpdateHealthText()
     {
         if (healthText != null)
         {
             healthText.text = health.ToString();
+        }
+    }
+
+    private void UpdateBrickColor()
+    {
+        if (spriteRenderer == null)
+        {
+            return;
+        }
+
+        switch (health)
+        {
+            case 1:
+                spriteRenderer.color = new Color(1f, 0.42f, 0.42f);
+                break;
+
+            case 2:
+                spriteRenderer.color = new Color(0.2f, 0.8f, 0.35f);
+                break;
+
+            case 3:
+                spriteRenderer.color = new Color(1f, 0.85f, 0.1f);
+                break;
+
+            case 4:
+                spriteRenderer.color = new Color(0.84f, 0.35f, 0f);
+                break;
+
+            case 5:
+                spriteRenderer.color = new Color(0.2f, 0.55f, 1f);
+                break;
+
+            default:
+                spriteRenderer.color = new Color(0.65f, 0.3f, 0.9f);
+                break;
         }
     }
 }

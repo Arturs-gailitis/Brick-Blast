@@ -62,7 +62,7 @@ public class BrickConfigReader : MonoBehaviour
 
             string[] values = line.Split(',');
 
-            if (values.Length < 7)
+            if (values.Length < 6)
             {
                 continue;
             }
@@ -116,8 +116,7 @@ public class BrickConfigReader : MonoBehaviour
                 column = column,
                 hitPoints = Mathf.Max(1, hitPoints),
                 score = Mathf.Max(0, score),
-                blockType = values[5].Trim(),
-                colorHex = values[6].Trim()
+                blockType = values[5].Trim()
             });
         }
     }
