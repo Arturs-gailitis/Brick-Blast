@@ -7,17 +7,28 @@ public class LevelManager : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private BrickSpawner brickSpawner;
+    [SerializeField] private LayerMask bottomWallLayer;
 
     [Header("Level settings")]
     [SerializeField] [Min(1)] private int firstLevel = 1;
+
+    [Header("Brick movement after shot")]
+    [SerializeField] [Min(0f)] private float brickMoveDownDistance = 1f;
+
+    [Header("Game over settings")]
+    [SerializeField] [Min(0f)] private float gameOverDistanceFromBottomWall = 0.4f;
 
     public int CurrentLevel { get; private set; }
 
     private int remainingBricks;
     private bool isChangingLevel;
     private bool waitingForNextLevel;
+    private bool isGameOver;
+
     private LevelCompleteUI levelCompleteUI;
+    private GameOverUI gameOverUI;
     private PlayerBallTrajectory playerBall;
+    private Collider2D bottomWall;
 
     private void Awake()
     {
@@ -36,11 +47,20 @@ public class LevelManager : MonoBehaviour
     {
         yield return null;
 
+        FindRuntimeBottomWall();
+
         levelCompleteUI = FindFirstObjectByType<LevelCompleteUI>(FindObjectsInactive.Include);
+
+        gameOverUI = FindFirstObjectByType<GameOverUI>(FindObjectsInactive.Include);
 
         if (levelCompleteUI != null)
         {
             levelCompleteUI.Initialize(this);
+        }
+
+        if (gameOverUI != null)
+        {
+            gameOverUI.Initialize(this);
         }
 
         LoadLevel(firstLevel);
@@ -48,7 +68,7 @@ public class LevelManager : MonoBehaviour
 
     public void BrickDestroyed()
     {
-        if (isChangingLevel)
+        if (isChangingLevel || isGameOver)
         {
             return;
         }
@@ -66,7 +86,7 @@ public class LevelManager : MonoBehaviour
 
     public void ContinueToNextLevel()
     {
-        if (!waitingForNextLevel)
+        if (!waitingForNextLevel || isGameOver)
         {
             return;
         }
@@ -78,7 +98,7 @@ public class LevelManager : MonoBehaviour
             return;
         }
 
-        SetLevelCompletePanelVisible(false);
+        LoadLevel(nextLevel);
 
         PlayerBallTrajectory ball = GetPlayerBall();
 
@@ -86,8 +106,28 @@ public class LevelManager : MonoBehaviour
         {
             ball.SetGameplayInputEnabled(true);
         }
+    }
 
-        LoadLevel(nextLevel);
+    public void RetryCurrentLevel()
+    {
+        if (!isGameOver)
+        {
+            return;
+        }
+
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.ResetScore();
+        }
+
+        LoadLevel(firstLevel);
+
+        PlayerBallTrajectory ball = GetPlayerBall();
+
+        if (ball != null)
+        {
+            ball.SetGameplayInputEnabled(true);
+        }
     }
 
     private void ShowLevelCompleteMenu()
@@ -128,15 +168,90 @@ public class LevelManager : MonoBehaviour
 
         isChangingLevel = false;
         waitingForNextLevel = false;
+        isGameOver = false;
 
         SetLevelCompletePanelVisible(false);
+
+        if (gameOverUI != null)
+        {
+            gameOverUI.Hide();
+        }
+
+        CheckForGameOver();
+    }
+
+    public void MoveAllBricksDown()
+    {
+        if (isChangingLevel || isGameOver)
+        {
+            return;
+        }
+
+        BrickCollision[] bricks = FindObjectsByType<BrickCollision>(FindObjectsSortMode.None);
+
+        foreach (BrickCollision brick in bricks)
+        {
+            brick.transform.position += Vector3.down * brickMoveDownDistance;
+        }
+
+        CheckForGameOver();
+    }
+
+    private void CheckForGameOver()
+    {
+        if (isGameOver || bottomWall == null)
+        {
+            return;
+        }
+
+        float dangerY = bottomWall.bounds.max.y + gameOverDistanceFromBottomWall;
+
+        BrickCollision[] bricks = FindObjectsByType<BrickCollision>(FindObjectsSortMode.None);
+
+        foreach (BrickCollision brick in bricks)
+        {
+            Collider2D brickCollider = brick.GetComponent<Collider2D>();
+
+            if (brickCollider == null)
+            {
+                continue;
+            }
+
+            float brickBottomY = brickCollider.bounds.min.y;
+
+            if (brickBottomY <= dangerY)
+            {
+                ShowGameOver();
+                return;
+            }
+        }
+    }
+
+    private void ShowGameOver()
+    {
+        isGameOver = true;
+        waitingForNextLevel = false;
+
+        SetLevelCompletePanelVisible(false);
+
+        PlayerBallTrajectory ball = GetPlayerBall();
+
+        if (ball != null)
+        {
+            ball.PrepareForNextLevel();
+        }
+
+        if (gameOverUI != null)
+        {
+            gameOverUI.Show(CurrentLevel);
+        }
     }
 
     private PlayerBallTrajectory GetPlayerBall()
     {
         if (playerBall == null)
         {
-            playerBall = FindFirstObjectByType<PlayerBallTrajectory>();;
+            playerBall = FindFirstObjectByType<PlayerBallTrajectory>();
         }
 
         return playerBall;
@@ -156,6 +271,22 @@ public class LevelManager : MonoBehaviour
         else
         {
             levelCompleteUI.Hide();
+        }
+    }
+
+    private void FindRuntimeBottomWall()
+    {
+        Collider2D[] colliders = FindObjectsByType<Collider2D>(FindObjectsSortMode.None);
+
+        foreach (Collider2D collider in colliders)
+        {
+            int colliderLayerMask = 1 << collider.gameObject.layer;
+
+            if ((bottomWallLayer.value & colliderLayerMask) != 0)
+            {
+                bottomWall = collider;
+                return;
+            }
         }
     }
 }

@@ -469,7 +469,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   brickSpawner: {fileID: 1138494233}
+  bottomWallLayer:
+    serializedVersion: 2
+    m_Bits: 64
   firstLevel: 1
+  brickMoveDownDistance: 0.3
+  gameOverDistanceFromBottomWall: 0.6
 --- !u!1 &2000098363
 GameObject:
   m_ObjectHideFlags: 0

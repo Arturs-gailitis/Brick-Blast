@@ -25,6 +25,7 @@ public class PlayerBallTrajectory : MonoBehaviour
     private Camera mainCamera;
 
     private bool canShoot = true;
+    private bool turnIsActive;
 
     private Vector2 launchPosition;
     private float timeSinceLastBrickHit;
@@ -112,9 +113,9 @@ public class PlayerBallTrajectory : MonoBehaviour
     private void LaunchBall(Vector2 direction)
     {
         canShoot = false;
+        turnIsActive = true;
 
         launchPosition = ballRigidbody.position;
-
         timeSinceLastBrickHit = 0f;
 
         ballRigidbody.WakeUp();
@@ -144,18 +145,32 @@ public class PlayerBallTrajectory : MonoBehaviour
         timeSinceLastBrickHit = 0f;
     }
 
-    private void ReturnBallToLaunchPosition()
+    private void ReturnBallToLaunchPosition(bool moveBricksDown = true)
     {
+        StopBallAndFinishTurn(launchPosition, moveBricksDown);
+    }
+
+    private void StopBallAndFinishTurn(Vector2 finalPosition, bool moveBricksDown)
+    {
+        bool shouldMoveBricks = turnIsActive && moveBricksDown;
+
+        turnIsActive = false;
+
         ballRigidbody.linearVelocity = Vector2.zero;
         ballRigidbody.angularVelocity = 0f;
 
-        ballRigidbody.position = launchPosition;
-        transform.position = launchPosition;
+        ballRigidbody.position = finalPosition;
+        transform.position = finalPosition;
 
         ballRigidbody.WakeUp();
 
         canShoot = true;
         timeSinceLastBrickHit = 0f;
+
+        if (shouldMoveBricks)
+        {
+            LevelManager.Instance?.MoveAllBricksDown();
+        }
 
         HideTrajectory();
     }
@@ -167,23 +182,13 @@ public class PlayerBallTrajectory : MonoBehaviour
             return;
         }
 
-        ballRigidbody.linearVelocity = Vector2.zero;
-        ballRigidbody.angularVelocity = 0f;
-
         float ballHalfHeight = ballCollider.bounds.extents.y;
         float safeY = collision.collider.bounds.max.y + ballHalfHeight + bottomWallGap;
 
         Vector2 safePosition = ballRigidbody.position;
         safePosition.y = safeY;
 
-        ballRigidbody.position = safePosition;
-
-        ballRigidbody.WakeUp();
-
-        canShoot = true;
-        timeSinceLastBrickHit = 0f;
-
-        HideTrajectory();
+        StopBallAndFinishTurn(safePosition, true);
     }
 
     private bool IsBottomWall(int objectLayer)
@@ -319,7 +324,7 @@ public class PlayerBallTrajectory : MonoBehaviour
 
     public void PrepareForNextLevel()
     {
-        ReturnBallToLaunchPosition();
+        ReturnBallToLaunchPosition(false);
 
         gameplayInputEnabled = false;
     }
