@@ -9,6 +9,9 @@ public class GameOverUI : MonoBehaviour
     [SerializeField] private TMP_Text gameOverText;
     [SerializeField] private Button retryButton;
 
+    [Header("Audio")]
+    [SerializeField] private LevelStatussPlayer uiSoundPlayer;
+
     private LevelManager levelManager;
 
     private void Awake()
@@ -40,6 +43,8 @@ public class GameOverUI : MonoBehaviour
         {
             gameOverPanel.SetActive(true);
         }
+
+        uiSoundPlayer?.PlayGameOverSound();
     }
 
     public void Hide()

@@ -9,6 +9,9 @@ public class LevelCompleteUI : MonoBehaviour
     [SerializeField] private TMP_Text levelCompleteText;
     [SerializeField] private Button nextLevelButton;
 
+    [Header("Audio")]
+    [SerializeField] private LevelStatussPlayer uiSoundPlayer;
+
     private LevelManager levelManager;
 
     public void Initialize(LevelManager manager)
@@ -42,6 +45,8 @@ public class LevelCompleteUI : MonoBehaviour
         {
             nextLevelButton.gameObject.SetActive(hasNextLevel);
         }
+
+        uiSoundPlayer?.PlayLevelCompleteSound();
     }
 
     public void Hide()
