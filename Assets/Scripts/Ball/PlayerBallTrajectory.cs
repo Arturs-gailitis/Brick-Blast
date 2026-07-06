@@ -13,6 +13,11 @@ public class PlayerBallTrajectory : MonoBehaviour
     [SerializeField] private float trajectoryDistance = 100f;
     [SerializeField] private float rayStartOffset = 0.03f;
 
+    [Header("Line quality")]
+    [SerializeField] [Range(0, 16)] private int cornerSmoothness = 8;
+    [SerializeField] [Range(0, 16)] private int capSmoothness = 6;
+    [SerializeField] [Min(0.01f)] private float minimumAimDistance = 0.35f;
+
     [Header("Ball settings")]
     [SerializeField] private float ballSpeed = 10f;
     [SerializeField] private float bottomWallGap = 0.03f;
@@ -49,6 +54,8 @@ public class PlayerBallTrajectory : MonoBehaviour
         ballRigidbody.linearVelocity = Vector2.zero;
         ballRigidbody.angularVelocity = 0f;
 
+        ConfigureLineRenderer();
+
         lineRenderer.positionCount = 0;
     }
 
@@ -69,13 +76,13 @@ public class PlayerBallTrajectory : MonoBehaviour
                 return;
             }
 
-        if (!IsPointerCurrentlyPressed())
-        {
-            waitForPointerRelease = false;
-        }
+            if (!IsPointerCurrentlyPressed())
+            {
+                waitForPointerRelease = false;
+            }
 
-        return;
-    }
+            return;
+        }
 
         CheckNoBrickHitTimer();
 
@@ -91,9 +98,17 @@ public class PlayerBallTrajectory : MonoBehaviour
             return;
         }
 
-        Vector2 direction = (pointerPosition - (Vector2)transform.position).normalized;
+        Vector2 aimVector = pointerPosition - (Vector2)transform.position;
 
-        if (direction.y <= 0.05f)
+        if (aimVector.sqrMagnitude < minimumAimDistance * minimumAimDistance)
+        {
+            HideTrajectory();
+            return;
+        }
+
+        Vector2 direction = aimVector.normalized;
+
+        if (direction.y < -0.01f)
         {
             HideTrajectory();
             return;
@@ -106,7 +121,14 @@ public class PlayerBallTrajectory : MonoBehaviour
 
         if (wasPointerReleased)
         {
-            LaunchBall(direction);
+            if (direction.y > 0.01f)
+            {
+                LaunchBall(direction);
+            }
+            else
+            {
+                HideTrajectory();
+            }
         }
     }
 
@@ -198,12 +220,13 @@ public class PlayerBallTrajectory : MonoBehaviour
 
     private void DrawTrajectory(Vector2 startDirection)
     {
-        List<Vector3> trajectoryPoints = new List<Vector3>();
-        trajectoryPoints.Add(transform.position);
+        List<Vector3> trajectoryPoints = new List<Vector3>(maxBounces + 2);
+        trajectoryPoints.Add(ballRigidbody.position);
 
         float ballRadius = ballCollider.bounds.extents.x;
 
-        Vector2 currentPosition = (Vector2)transform.position + startDirection * rayStartOffset;
+        Vector2 currentPosition = ballRigidbody.position + startDirection * rayStartOffset;
+
         Vector2 currentDirection = startDirection;
 
         for (int i = 0; i < maxBounces; i++)
@@ -218,9 +241,11 @@ public class PlayerBallTrajectory : MonoBehaviour
 
             if (hit.collider == null)
             {
-                trajectoryPoints.Add(currentPosition + currentDirection * trajectoryDistance);
+                trajectoryPoints.Add( currentPosition + currentDirection * trajectoryDistance);
                 break;
             }
+
+            Vector2 bounceCenter = hit.centroid;
 
             trajectoryPoints.Add(hit.point);
 
@@ -229,8 +254,8 @@ public class PlayerBallTrajectory : MonoBehaviour
                 break;
             }
 
-            currentDirection = Vector2.Reflect(currentDirection, hit.normal);
-            currentPosition = hit.centroid + currentDirection * rayStartOffset;
+            currentDirection = Vector2.Reflect(currentDirection, hit.normal).normalized;
+            currentPosition = bounceCenter + currentDirection * rayStartOffset;
         }
 
         lineRenderer.positionCount = trajectoryPoints.Count;
@@ -339,6 +364,22 @@ public class PlayerBallTrajectory : MonoBehaviour
         }
 
         return Input.GetMouseButton(0);
+    }
+
+    private void ConfigureLineRenderer()
+    {
+        if (lineRenderer == null)
+        {
+            return;
+        }
+
+        lineRenderer.useWorldSpace = true;
+        lineRenderer.alignment = LineAlignment.View;
+
+        lineRenderer.numCornerVertices = cornerSmoothness;
+        lineRenderer.numCapVertices = capSmoothness;
+
+        lineRenderer.generateLightingData = false;
     }
     
 }
