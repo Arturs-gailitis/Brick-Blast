@@ -361,6 +361,8 @@ GameObject:
   - component: {fileID: 5137920498101679867}
   - component: {fileID: 2295616884123236320}
   - component: {fileID: 2130369776949993185}
+  - component: {fileID: 6303028419958459240}
+  - component: {fileID: 7997480016595708784}
   m_Layer: 5
   m_Name: PlayButton
   m_TagString: Untagged
@@ -470,7 +472,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1601162690509424208}
+      - m_Target: {fileID: 7997480016595708784}
         m_TargetAssemblyTypeName: MainMenuController, Assembly-CSharp
         m_MethodName: SwitchGame
         m_Mode: 1
@@ -482,6 +484,35 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &6303028419958459240
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8271655987468823168}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee9f208d6f17c1c48b42c7f4ef75c9dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  clickClip: {fileID: 8300000, guid: c9d9cefc879e47540bfcbcb2025d36d7, type: 3}
+  volume: 0.4
+--- !u!114 &7997480016595708784
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8271655987468823168}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88addc94752b7d34db357cc970b7c45c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SceneName: Game
+  buttonClickSound: {fileID: 6303028419958459240}
+  sceneLoadDelay: 0.07
 --- !u!1 &9214921214544333268
 GameObject:
   m_ObjectHideFlags: 0
@@ -495,8 +526,6 @@ GameObject:
   - component: {fileID: 6784293677649745575}
   - component: {fileID: 2419507495903671633}
   - component: {fileID: 8344931509741641422}
-  - component: {fileID: 1601162690509424208}
-  - component: {fileID: 6421695553644969174}
   m_Layer: 5
   m_Name: MainMenuCanvas
   m_TagString: Untagged
@@ -686,30 +715,3 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &1601162690509424208
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9214921214544333268}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 88addc94752b7d34db357cc970b7c45c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  SceneName: Game
---- !u!114 &6421695553644969174
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9214921214544333268}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ee9f208d6f17c1c48b42c7f4ef75c9dc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  clickClip: {fileID: 8300000, guid: c9d9cefc879e47540bfcbcb2025d36d7, type: 3}
-  volume: 0.4
