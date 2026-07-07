@@ -2,12 +2,11 @@ using UnityEngine;
 
 public class SpawnWalls : MonoBehaviour
 {
-    [SerializeField] private GameObject [] WallPrefab;
+    [SerializeField] private GameObject[] WallPrefab;
 
-
-    private void Start()
+    private void Awake()
     {
-        for (var i = 0; i < WallPrefab.Length; i++)
+        for (int i = 0; i < WallPrefab.Length; i++)
         {
             Instantiate(WallPrefab[i]);
         }

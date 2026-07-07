@@ -61,6 +61,7 @@ public class PlayerBallTrajectory : MonoBehaviour
 
     private void Update()
     {
+
         if (!gameplayInputEnabled)
         {
             HideTrajectory();
@@ -345,6 +346,14 @@ public class PlayerBallTrajectory : MonoBehaviour
         {
             HideTrajectory();
         }
+    }
+
+    private void OnEnable()
+    {
+        waitForPointerRelease = true;
+        inputEnabledFrame = Time.frameCount;
+
+        HideTrajectory();
     }
 
     public void PrepareForNextLevel()
