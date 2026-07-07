@@ -1,4 +1,3 @@
-using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -13,7 +12,6 @@ public class MainMenuController : MonoBehaviour
 
     [Header("Sound")]
     [SerializeField] private UIButtonClickSound buttonClickSound;
-    [SerializeField] [Min(0f)] private float sceneLoadDelay;
 
     private Button button;
     private bool isLoading;
@@ -43,11 +41,6 @@ public class MainMenuController : MonoBehaviour
             return;
         }
 
-        StartCoroutine(LoadSceneAfterSound());
-    }
-
-    private IEnumerator LoadSceneAfterSound()
-    {
         isLoading = true;
 
         if (buttonClickSound != null)
@@ -59,8 +52,6 @@ public class MainMenuController : MonoBehaviour
         {
             button.interactable = false;
         }
-
-        yield return new WaitForSecondsRealtime(sceneLoadDelay);
 
         if (resetProgressAfterGameOver && LevelManager.Instance != null && LevelManager.Instance.IsGameOver)
         {

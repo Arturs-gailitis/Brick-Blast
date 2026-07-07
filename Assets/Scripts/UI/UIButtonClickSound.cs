@@ -9,38 +9,32 @@ public class UIButtonClickSound : MonoBehaviour, IPointerClickHandler
     [SerializeField] [Range(0f, 1f)] private float volume = 0.7f;
 
     private Button button;
-    private AudioSource canvasAudioSource;
 
     private void Awake()
     {
         button = GetComponent<Button>();
-
-        Canvas parentCanvas = GetComponentInParent<Canvas>();
-
-        if (parentCanvas == null)
-        {
-            return;
-        }
-
-        canvasAudioSource = parentCanvas.GetComponent<AudioSource>();
-
-        if (canvasAudioSource == null)
-        {
-            canvasAudioSource = parentCanvas.gameObject.AddComponent<AudioSource>();
-        }
-
-        canvasAudioSource.playOnAwake = false;
-        canvasAudioSource.loop = false;
-        canvasAudioSource.spatialBlend = 0f;
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (button == null || !button.interactable || clickClip == null || canvasAudioSource == null)
+        if (button == null || !button.interactable || clickClip == null)
         {
             return;
         }
 
-        canvasAudioSource.PlayOneShot(clickClip, volume);
+        GameObject soundObject = new GameObject("ButtonClickSound");
+
+        AudioSource audioSource = soundObject.AddComponent<AudioSource>();
+        audioSource.clip = clickClip;
+        audioSource.volume = volume;
+        audioSource.playOnAwake = false;
+        audioSource.loop = false;
+        audioSource.spatialBlend = 0f;
+
+        DontDestroyOnLoad(soundObject);
+
+        audioSource.Play();
+
+        Destroy(soundObject, clickClip.length);
     }
 }
