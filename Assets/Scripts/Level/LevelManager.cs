@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class LevelManager : MonoBehaviour
@@ -18,7 +19,8 @@ public class LevelManager : MonoBehaviour
     [SerializeField] [Min(0f)] private float brickMoveDownDistance = 1f;
 
     [Header("Game over settings")]
-    [SerializeField] [Min(0f)] private float gameOverDistanceFromBottomWall = 0.4f;
+    [SerializeField] [Min(0f)]
+    private float gameOverDistanceFromBottomWall = 0.4f;
 
     public int CurrentLevel { get; private set; }
     public bool IsGameOver => isGameOver;
@@ -66,6 +68,13 @@ public class LevelManager : MonoBehaviour
             gameOverUI.Initialize(this);
         }
 
+        if (GameSaveManager.TryLoadGame(out SavedGameData savedGame) && brickSpawner != null &&
+            brickSpawner.LevelExists(savedGame.level))
+        {
+            LoadSavedGame(savedGame);
+            yield break;
+        }
+
         int savedLevel = PlayerPrefs.GetInt(SavedLevelKey, firstLevel);
 
         if (brickSpawner == null || !brickSpawner.LevelExists(savedLevel))
@@ -75,6 +84,41 @@ public class LevelManager : MonoBehaviour
         }
 
         LoadLevel(savedLevel);
+    }
+
+    public void SaveCurrentGame()
+    {
+        if (brickSpawner == null || isChangingLevel || isGameOver)
+        {
+            return;
+        }
+
+        PlayerBallTrajectory ball = GetPlayerBall();
+
+        if (ball == null)
+        {
+            return;
+        }
+
+        List<SavedBrickData> savedBricks = brickSpawner.GetCurrentBricks();
+
+        if (savedBricks.Count == 0)
+        {
+            return;
+        }
+
+        SavedGameData savedGame = new SavedGameData
+        {
+            level = CurrentLevel,
+            score = ScoreManager.Instance != null
+                ? ScoreManager.Instance.CurrentScore
+                : 0,
+            ball = ball.CreateSaveData(),
+            bricks = savedBricks
+        };
+
+        GameSaveManager.SaveGame(savedGame);
+        SaveLevelProgress(CurrentLevel);
     }
 
     public void BrickDestroyed()
@@ -90,6 +134,8 @@ public class LevelManager : MonoBehaviour
         {
             return;
         }
+
+        GameSaveManager.ClearSavedGame();
 
         int nextLevel = CurrentLevel + 1;
 
@@ -142,6 +188,7 @@ public class LevelManager : MonoBehaviour
             ScoreManager.Instance.ResetScore();
         }
 
+        GameSaveManager.ClearSavedGame();
         SaveLevelProgress(firstLevel);
         LoadLevel(firstLevel);
 
@@ -174,6 +221,51 @@ public class LevelManager : MonoBehaviour
         }
     }
 
+    private void LoadSavedGame(SavedGameData savedGame)
+    {
+        if (brickSpawner == null)
+        {
+            return;
+        }
+
+        CurrentLevel = savedGame.level;
+
+        remainingBricks = brickSpawner.SpawnSavedLevel(savedGame.bricks);
+
+        if (remainingBricks == 0)
+        {
+            GameSaveManager.ClearSavedGame();
+            LoadLevel(CurrentLevel);
+            return;
+        }
+
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.SetScore(savedGame.score);
+            ScoreManager.Instance.UpdateLevelText(CurrentLevel);
+        }
+
+        isChangingLevel = false;
+        waitingForNextLevel = false;
+        isGameOver = false;
+
+        SetLevelCompletePanelVisible(false);
+
+        if (gameOverUI != null)
+        {
+            gameOverUI.Hide();
+        }
+
+        PlayerBallTrajectory ball = GetPlayerBall();
+
+        if (ball != null)
+        {
+            ball.RestoreSavedState(savedGame.ball);
+        }
+
+        CheckForGameOver();
+    }
+
     private void LoadLevel(int level)
     {
         if (brickSpawner == null)
@@ -181,7 +273,10 @@ public class LevelManager : MonoBehaviour
             return;
         }
 
+        GameSaveManager.ClearSavedGame();
+
         CurrentLevel = level;
+
         remainingBricks = brickSpawner.SpawnLevel(CurrentLevel);
 
         if (ScoreManager.Instance != null)
@@ -214,7 +309,8 @@ public class LevelManager : MonoBehaviour
 
         foreach (BrickCollision brick in bricks)
         {
-            brick.transform.position += Vector3.down * brickMoveDownDistance;
+            brick.transform.position +=
+                Vector3.down * brickMoveDownDistance;
         }
 
         CheckForGameOver();
@@ -227,22 +323,26 @@ public class LevelManager : MonoBehaviour
             return;
         }
 
-        float dangerY = bottomWall.bounds.max.y + gameOverDistanceFromBottomWall;
+        float dangerY =
+            bottomWall.bounds.max.y +
+            gameOverDistanceFromBottomWall;
 
-        BrickCollision[] bricks = FindObjectsByType<BrickCollision>(FindObjectsSortMode.None);
+        BrickCollision[] bricks =
+            FindObjectsByType<BrickCollision>(
+                FindObjectsSortMode.None
+            );
 
         foreach (BrickCollision brick in bricks)
         {
-            Collider2D brickCollider = brick.GetComponent<Collider2D>();
+            Collider2D brickCollider =
+                brick.GetComponent<Collider2D>();
 
             if (brickCollider == null)
             {
                 continue;
             }
 
-            float brickBottomY = brickCollider.bounds.min.y;
-
-            if (brickBottomY <= dangerY)
+            if (brickCollider.bounds.min.y <= dangerY)
             {
                 ShowGameOver();
                 return;
@@ -254,6 +354,8 @@ public class LevelManager : MonoBehaviour
     {
         isGameOver = true;
         waitingForNextLevel = false;
+
+        GameSaveManager.ClearSavedGame();
 
         SetLevelCompletePanelVisible(false);
 
@@ -274,7 +376,8 @@ public class LevelManager : MonoBehaviour
     {
         if (playerBall == null)
         {
-            playerBall = FindFirstObjectByType<PlayerBallTrajectory>();
+            playerBall =
+                FindFirstObjectByType<PlayerBallTrajectory>();
         }
 
         return playerBall;
@@ -299,7 +402,10 @@ public class LevelManager : MonoBehaviour
 
     private void FindRuntimeBottomWall()
     {
-        Collider2D[] colliders = FindObjectsByType<Collider2D>(FindObjectsSortMode.None);
+        Collider2D[] colliders =
+            FindObjectsByType<Collider2D>(
+                FindObjectsSortMode.None
+            );
 
         foreach (Collider2D collider in colliders)
         {
@@ -322,6 +428,7 @@ public class LevelManager : MonoBehaviour
     public static void ResetSavedProgress()
     {
         PlayerPrefs.DeleteKey(SavedLevelKey);
+        GameSaveManager.ClearSavedGame();
         PlayerPrefs.Save();
     }
 }

@@ -9,6 +9,7 @@ public class MainMenuController : MonoBehaviour
 
     [Header("Progress")]
     [SerializeField] private bool resetProgressAfterGameOver;
+    [SerializeField] private bool saveGameBeforeChangingScene;
 
     [Header("Sound")]
     [SerializeField] private UIButtonClickSound buttonClickSound;
@@ -53,10 +54,20 @@ public class MainMenuController : MonoBehaviour
             button.interactable = false;
         }
 
-        if (resetProgressAfterGameOver && LevelManager.Instance != null && LevelManager.Instance.IsGameOver)
+        bool shouldResetProgress =
+            resetProgressAfterGameOver &&
+            LevelManager.Instance != null &&
+            LevelManager.Instance.IsGameOver;
+
+        if (shouldResetProgress)
         {
             LevelManager.ResetSavedProgress();
             ScoreManager.ResetSavedScore();
+        }
+        else if (saveGameBeforeChangingScene &&
+                 LevelManager.Instance != null)
+        {
+            LevelManager.Instance.SaveCurrentGame();
         }
 
         SceneManager.LoadScene(SceneName);

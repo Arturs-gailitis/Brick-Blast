@@ -26,12 +26,7 @@ public class BrickSpawner : MonoBehaviour
 
     public bool LevelExists(int level)
     {
-        if (brickConfigReader == null)
-        {
-            return false;
-        }
-
-        return brickConfigReader.GetBricksForLevel(level).Count > 0;
+        return brickConfigReader != null && brickConfigReader.GetBricksForLevel(level).Count > 0;
     }
 
     public int SpawnLevel(int level)
@@ -84,8 +79,9 @@ public class BrickSpawner : MonoBehaviour
             return 0;
         }
 
-        float firstBrickX = (leftWall.bounds.max.x + rightWall.bounds.min.x) / 2f - gridWidth / 2f + brickWidth / 2f 
-            + horizontalOffset;
+        float firstBrickX =
+            (leftWall.bounds.max.x + rightWall.bounds.min.x) / 2f - gridWidth / 2f + brickWidth / 2f +
+            horizontalOffset;
 
         float firstBrickY = topWall.bounds.min.y - distanceFromTopWall - brickHeight / 2f;
 
@@ -110,14 +106,74 @@ public class BrickSpawner : MonoBehaviour
             newBrick.name = "Brick_" + level + "_" + brickConfig.row + "_" + brickConfig.column;
 
             brickCollision.Configure(brickConfig);
-
             spawnedBricks++;
         }
 
         return spawnedBricks;
     }
 
-    private bool TryGetWalls( out Collider2D leftWall, out Collider2D rightWall, out Collider2D topWall)
+    public int SpawnSavedLevel(List<SavedBrickData> savedBricks)
+    {
+        ClearBricks();
+
+        if (brickPrefab == null || savedBricks == null)
+        {
+            return 0;
+        }
+
+        int spawnedBricks = 0;
+
+        foreach (SavedBrickData savedBrick in savedBricks)
+        {
+            if (savedBrick == null)
+            {
+                continue;
+            }
+
+            GameObject newBrick = Instantiate(
+                brickPrefab, new Vector3(savedBrick.x, savedBrick.y, 0f), Quaternion.identity, bricksParent
+            );
+
+            BrickCollision brickCollision = newBrick.GetComponent<BrickCollision>();
+
+            if (brickCollision == null)
+            {
+                Destroy(newBrick);
+                continue;
+            }
+
+            newBrick.name = "SavedBrick_" + spawnedBricks;
+
+            brickCollision.ConfigureSaved(savedBrick);
+            spawnedBricks++;
+        }
+
+        return spawnedBricks;
+    }
+
+    public List<SavedBrickData> GetCurrentBricks()
+    {
+        List<SavedBrickData> savedBricks = new List<SavedBrickData>();
+
+        if (bricksParent == null)
+        {
+            return savedBricks;
+        }
+
+        for (int i = 0; i < bricksParent.childCount; i++)
+        {
+            BrickCollision brick = bricksParent.GetChild(i).GetComponent<BrickCollision>();
+
+            if (brick != null)
+            {
+                savedBricks.Add(brick.CreateSaveData());
+            }
+        }
+
+        return savedBricks;
+    }
+
+    private bool TryGetWalls(out Collider2D leftWall, out Collider2D rightWall, out Collider2D topWall)
     {
         leftWall = null;
         rightWall = null;

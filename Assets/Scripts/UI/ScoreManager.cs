@@ -36,12 +36,17 @@ public class ScoreManager : MonoBehaviour
         UpdateScoreText();
     }
 
-    public void ResetScore()
+    public void SetScore(int score)
     {
-        CurrentScore = 0;
+        CurrentScore = Mathf.Max(0, score);
 
         SaveScore();
         UpdateScoreText();
+    }
+
+    public void ResetScore()
+    {
+        SetScore(0);
     }
 
     public static void ResetSavedScore()

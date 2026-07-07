@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class PlayerBallTrajectory : MonoBehaviour
 {
@@ -37,7 +39,11 @@ public class PlayerBallTrajectory : MonoBehaviour
 
     private bool gameplayInputEnabled = true;
     private bool waitForPointerRelease;
+    private bool ignoreCurrentPointerUntilReleased;
     private int inputEnabledFrame;
+
+    private readonly List<RaycastResult> uiRaycastResults =
+        new List<RaycastResult>();
 
     private void Awake()
     {
@@ -61,10 +67,21 @@ public class PlayerBallTrajectory : MonoBehaviour
 
     private void Update()
     {
-
         if (!gameplayInputEnabled)
         {
             HideTrajectory();
+            return;
+        }
+
+        if (ignoreCurrentPointerUntilReleased)
+        {
+            HideTrajectory();
+
+            if (!IsPointerCurrentlyPressed())
+            {
+                ignoreCurrentPointerUntilReleased = false;
+            }
+
             return;
         }
 
@@ -173,7 +190,7 @@ public class PlayerBallTrajectory : MonoBehaviour
         StopBallAndFinishTurn(launchPosition, moveBricksDown);
     }
 
-    private void StopBallAndFinishTurn(Vector2 finalPosition, bool moveBricksDown)
+    private void StopBallAndFinishTurn(Vector2 finalPosition,bool moveBricksDown)
     {
         bool shouldMoveBricks = turnIsActive && moveBricksDown;
 
@@ -206,6 +223,7 @@ public class PlayerBallTrajectory : MonoBehaviour
         }
 
         float ballHalfHeight = ballCollider.bounds.extents.y;
+
         float safeY = collision.collider.bounds.max.y + ballHalfHeight + bottomWallGap;
 
         Vector2 safePosition = ballRigidbody.position;
@@ -222,6 +240,7 @@ public class PlayerBallTrajectory : MonoBehaviour
     private void DrawTrajectory(Vector2 startDirection)
     {
         List<Vector3> trajectoryPoints = new List<Vector3>(maxBounces + 2);
+
         trajectoryPoints.Add(ballRigidbody.position);
 
         float ballRadius = ballCollider.bounds.extents.x;
@@ -242,7 +261,8 @@ public class PlayerBallTrajectory : MonoBehaviour
 
             if (hit.collider == null)
             {
-                trajectoryPoints.Add( currentPosition + currentDirection * trajectoryDistance);
+                trajectoryPoints.Add(currentPosition + currentDirection * trajectoryDistance);
+
                 break;
             }
 
@@ -256,6 +276,7 @@ public class PlayerBallTrajectory : MonoBehaviour
             }
 
             currentDirection = Vector2.Reflect(currentDirection, hit.normal).normalized;
+
             currentPosition = bounceCenter + currentDirection * rayStartOffset;
         }
 
@@ -314,6 +335,12 @@ public class PlayerBallTrajectory : MonoBehaviour
             return false;
         }
 
+        if (IsPointerOverUI(screenPosition))
+        {
+            ignoreCurrentPointerUntilReleased = true;
+            return false;
+        }
+
         if (screenPosition.x < 0 ||
             screenPosition.x > Screen.width ||
             screenPosition.y < 0 ||
@@ -324,13 +351,41 @@ public class PlayerBallTrajectory : MonoBehaviour
 
         float distanceToBallPlane = Mathf.Abs(mainCamera.transform.position.z - transform.position.z);
 
-        Vector3 convertedPosition = mainCamera.ScreenToWorldPoint(
-            new Vector3(screenPosition.x, screenPosition.y, distanceToBallPlane)
-        );
+        Vector3 convertedPosition =
+            mainCamera.ScreenToWorldPoint(
+                new Vector3(screenPosition.x, screenPosition.y, distanceToBallPlane)
+            );
 
         worldPosition = new Vector2(convertedPosition.x, convertedPosition.y);
 
         return true;
+    }
+
+    private bool IsPointerOverUI(Vector2 screenPosition)
+    {
+        if (EventSystem.current == null)
+        {
+            return false;
+        }
+
+        PointerEventData pointerData = new PointerEventData(EventSystem.current)
+            {
+                position = screenPosition
+            };
+
+        uiRaycastResults.Clear();
+
+        EventSystem.current.RaycastAll(pointerData, uiRaycastResults);
+
+        foreach (RaycastResult result in uiRaycastResults)
+        {
+            if (result.module is GraphicRaycaster)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public void SetGameplayInputEnabled(bool isEnabled)
@@ -375,6 +430,46 @@ public class PlayerBallTrajectory : MonoBehaviour
         return Input.GetMouseButton(0);
     }
 
+    public SavedBallData CreateSaveData()
+    {
+        return new SavedBallData
+        {
+            x = ballRigidbody.position.x,
+            y = ballRigidbody.position.y
+        };
+    }
+
+    public void RestoreSavedState(SavedBallData savedBall)
+    {
+        if (savedBall == null || ballRigidbody == null)
+        {
+            return;
+        }
+
+        Vector2 restoredPosition = new Vector2(savedBall.x, savedBall.y);
+
+        ballRigidbody.linearVelocity = Vector2.zero;
+        ballRigidbody.angularVelocity = 0f;
+
+        ballRigidbody.position = restoredPosition;
+        transform.position = restoredPosition;
+
+        ballRigidbody.WakeUp();
+
+        launchPosition = restoredPosition;
+        timeSinceLastBrickHit = 0f;
+
+        canShoot = true;
+        turnIsActive = false;
+
+        gameplayInputEnabled = true;
+        waitForPointerRelease = true;
+        ignoreCurrentPointerUntilReleased = false;
+        inputEnabledFrame = Time.frameCount;
+
+        HideTrajectory();
+    }
+
     private void ConfigureLineRenderer()
     {
         if (lineRenderer == null)
@@ -390,5 +485,4 @@ public class PlayerBallTrajectory : MonoBehaviour
 
         lineRenderer.generateLightingData = false;
     }
-    
 }

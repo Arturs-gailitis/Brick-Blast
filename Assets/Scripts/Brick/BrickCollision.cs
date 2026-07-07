@@ -17,7 +17,6 @@ public class BrickCollision : MonoBehaviour
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
-
         UpdateBrickVisuals();
     }
 
@@ -31,8 +30,36 @@ public class BrickCollision : MonoBehaviour
         health = Mathf.Max(1, brickConfig.hitPoints);
         score = Mathf.Max(0, brickConfig.score);
         blockType = brickConfig.blockType;
+        isDestroyed = false;
 
         UpdateBrickVisuals();
+    }
+
+    public void ConfigureSaved(SavedBrickData savedBrick)
+    {
+        if (savedBrick == null)
+        {
+            return;
+        }
+
+        health = Mathf.Max(1, savedBrick.health);
+        score = Mathf.Max(0, savedBrick.score);
+        blockType = savedBrick.blockType;
+        isDestroyed = false;
+
+        UpdateBrickVisuals();
+    }
+
+    public SavedBrickData CreateSaveData()
+    {
+        return new SavedBrickData
+        {
+            x = transform.position.x,
+            y = transform.position.y,
+            health = health,
+            score = score,
+            blockType = blockType
+        };
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
