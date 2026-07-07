@@ -8,6 +8,9 @@ public class MainMenuController : MonoBehaviour
     [Header("Scene")]
     [SerializeField] private string SceneName;
 
+    [Header("Progress")]
+    [SerializeField] private bool resetProgressAfterGameOver;
+
     [Header("Sound")]
     [SerializeField] private UIButtonClickSound buttonClickSound;
     [SerializeField] [Min(0f)] private float sceneLoadDelay;
@@ -58,6 +61,12 @@ public class MainMenuController : MonoBehaviour
         }
 
         yield return new WaitForSecondsRealtime(sceneLoadDelay);
+
+        if (resetProgressAfterGameOver && LevelManager.Instance != null && LevelManager.Instance.IsGameOver)
+        {
+            LevelManager.ResetSavedProgress();
+            ScoreManager.ResetSavedScore();
+        }
 
         SceneManager.LoadScene(SceneName);
     }

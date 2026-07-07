@@ -5,6 +5,8 @@ public class LevelManager : MonoBehaviour
 {
     public static LevelManager Instance { get; private set; }
 
+    private const string SavedLevelKey = "SavedLevel";
+
     [Header("References")]
     [SerializeField] private BrickSpawner brickSpawner;
     [SerializeField] private LayerMask bottomWallLayer;
@@ -19,6 +21,7 @@ public class LevelManager : MonoBehaviour
     [SerializeField] [Min(0f)] private float gameOverDistanceFromBottomWall = 0.4f;
 
     public int CurrentLevel { get; private set; }
+    public bool IsGameOver => isGameOver;
 
     private int remainingBricks;
     private bool isChangingLevel;
@@ -63,7 +66,15 @@ public class LevelManager : MonoBehaviour
             gameOverUI.Initialize(this);
         }
 
-        LoadLevel(firstLevel);
+        int savedLevel = PlayerPrefs.GetInt(SavedLevelKey, firstLevel);
+
+        if (brickSpawner == null || !brickSpawner.LevelExists(savedLevel))
+        {
+            savedLevel = firstLevel;
+            SaveLevelProgress(firstLevel);
+        }
+
+        LoadLevel(savedLevel);
     }
 
     public void BrickDestroyed()
@@ -78,6 +89,17 @@ public class LevelManager : MonoBehaviour
         if (remainingBricks > 0)
         {
             return;
+        }
+
+        int nextLevel = CurrentLevel + 1;
+
+        if (brickSpawner != null && brickSpawner.LevelExists(nextLevel))
+        {
+            SaveLevelProgress(nextLevel);
+        }
+        else
+        {
+            SaveLevelProgress(firstLevel);
         }
 
         isChangingLevel = true;
@@ -120,6 +142,7 @@ public class LevelManager : MonoBehaviour
             ScoreManager.Instance.ResetScore();
         }
 
+        SaveLevelProgress(firstLevel);
         LoadLevel(firstLevel);
 
         PlayerBallTrajectory ball = GetPlayerBall();
@@ -288,5 +311,17 @@ public class LevelManager : MonoBehaviour
                 return;
             }
         }
+    }
+
+    private void SaveLevelProgress(int level)
+    {
+        PlayerPrefs.SetInt(SavedLevelKey, level);
+        PlayerPrefs.Save();
+    }
+
+    public static void ResetSavedProgress()
+    {
+        PlayerPrefs.DeleteKey(SavedLevelKey);
+        PlayerPrefs.Save();
     }
 }

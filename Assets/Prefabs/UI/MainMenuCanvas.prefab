@@ -511,8 +511,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   SceneName: Game
+  resetProgressAfterGameOver: 0
   buttonClickSound: {fileID: 6303028419958459240}
-  sceneLoadDelay: 0.07
+  sceneLoadDelay: 0.02
 --- !u!1 &9214921214544333268
 GameObject:
   m_ObjectHideFlags: 0
