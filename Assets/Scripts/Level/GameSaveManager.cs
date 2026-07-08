@@ -5,6 +5,8 @@ public static class GameSaveManager
     private const string SavedGameKey = "SavedGameData";
     private const string HasSavedGameKey = "HasSavedGameData";
 
+    private const string SavedBallAttackKey = "SavedBallAttackStrength";
+
     public static void SaveGame(SavedGameData savedGame)
     {
         if (savedGame == null)
@@ -46,6 +48,23 @@ public static class GameSaveManager
     {
         PlayerPrefs.DeleteKey(SavedGameKey);
         PlayerPrefs.DeleteKey(HasSavedGameKey);
+        PlayerPrefs.Save();
+    }
+
+    public static void SaveBallAttackStrength(int attackStrength)
+    {
+        PlayerPrefs.SetInt(SavedBallAttackKey, Mathf.Max(1, attackStrength));
+        PlayerPrefs.Save();
+    }
+
+    public static int LoadBallAttackStrength()
+    {
+        return Mathf.Max(1, PlayerPrefs.GetInt(SavedBallAttackKey, 1));
+    }
+
+    public static void ClearBallAttackStrength()
+    {
+        PlayerPrefs.DeleteKey(SavedBallAttackKey);
         PlayerPrefs.Save();
     }
 }

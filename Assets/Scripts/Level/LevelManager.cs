@@ -10,7 +10,7 @@ public class LevelManager : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private BrickSpawner brickSpawner;
-    [SerializeField] private LaserSpawner laserSpawner;
+    [SerializeField] private AbilitySpawner abilitySpawner;
     [SerializeField] private LayerMask bottomWallLayer;
 
     [Header("Level settings")]
@@ -56,7 +56,6 @@ public class LevelManager : MonoBehaviour
         FindRuntimeBottomWall();
 
         levelCompleteUI = FindFirstObjectByType<LevelCompleteUI>(FindObjectsInactive.Include);
-
         gameOverUI = FindFirstObjectByType<GameOverUI>(FindObjectsInactive.Include);
 
         if (levelCompleteUI != null)
@@ -69,7 +68,8 @@ public class LevelManager : MonoBehaviour
             gameOverUI.Initialize(this);
         }
 
-        if (GameSaveManager.TryLoadGame(out SavedGameData savedGame) && brickSpawner != null &&
+        if (GameSaveManager.TryLoadGame(out SavedGameData savedGame) &&
+            brickSpawner != null &&
             brickSpawner.LevelExists(savedGame.level))
         {
             LoadSavedGame(savedGame);
@@ -108,8 +108,8 @@ public class LevelManager : MonoBehaviour
             return;
         }
 
-        List<SavedAbilityData> savedAbilities = laserSpawner != null
-            ? laserSpawner.GetCurrentAbilities()
+        List<SavedAbilityData> savedAbilities = abilitySpawner != null
+            ? abilitySpawner.GetCurrentAbilities()
             : new List<SavedAbilityData>();
 
         SavedGameData savedGame = new SavedGameData
@@ -126,6 +126,18 @@ public class LevelManager : MonoBehaviour
 
         GameSaveManager.SaveGame(savedGame);
         SaveLevelProgress(CurrentLevel);
+    }
+
+    public void SaveCurrentBallAttackStrength()
+    {
+        PlayerBallTrajectory ball = GetPlayerBall();
+
+        if (ball == null)
+        {
+            return;
+        }
+
+        GameSaveManager.SaveBallAttackStrength(ball.AttackStrength);
     }
 
     public void BrickDestroyed()
@@ -195,11 +207,16 @@ public class LevelManager : MonoBehaviour
             ScoreManager.Instance.ResetScore();
         }
 
+        PlayerBallTrajectory ball = GetPlayerBall();
+
+        if (ball != null)
+        {
+            ball.ResetAttackStrength();
+        }
+
         GameSaveManager.ClearSavedGame();
         SaveLevelProgress(firstLevel);
         LoadLevel(firstLevel);
-
-        PlayerBallTrajectory ball = GetPlayerBall();
 
         if (ball != null)
         {
@@ -237,15 +254,15 @@ public class LevelManager : MonoBehaviour
 
         CurrentLevel = savedGame.level;
 
-        if (laserSpawner != null)
+        if (abilitySpawner != null)
         {
             if (savedGame.abilitiesWereSaved)
             {
-                laserSpawner.SpawnSavedAbilities(savedGame.abilities);
+                abilitySpawner.SpawnSavedAbilities(savedGame.abilities);
             }
             else
             {
-                laserSpawner.SpawnLevel(CurrentLevel);
+                abilitySpawner.SpawnLevel(CurrentLevel);
             }
         }
 
@@ -296,7 +313,7 @@ public class LevelManager : MonoBehaviour
 
         CurrentLevel = level;
 
-        laserSpawner?.SpawnLevel(CurrentLevel);
+        abilitySpawner?.SpawnLevel(CurrentLevel);
 
         remainingBricks = brickSpawner.SpawnLevel(CurrentLevel);
 
@@ -333,7 +350,7 @@ public class LevelManager : MonoBehaviour
             brick.transform.position += Vector3.down * brickMoveDownDistance;
         }
 
-        laserSpawner?.MoveAllLasersDown(brickMoveDownDistance);
+        abilitySpawner?.MoveAllAbilitiesDown(brickMoveDownDistance);
 
         CheckForGameOver();
     }
@@ -385,7 +402,12 @@ public class LevelManager : MonoBehaviour
 
         if (ball != null)
         {
+            ball.ResetAttackStrength();
             ball.PrepareForNextLevel();
+        }
+        else
+        {
+            GameSaveManager.SaveBallAttackStrength(1);
         }
 
         if (gameOverUI != null)
@@ -451,6 +473,7 @@ public class LevelManager : MonoBehaviour
     {
         PlayerPrefs.DeleteKey(SavedLevelKey);
         GameSaveManager.ClearSavedGame();
+        GameSaveManager.SaveBallAttackStrength(1);
         PlayerPrefs.Save();
     }
 }

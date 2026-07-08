@@ -72,22 +72,27 @@ public class BrickCollision : MonoBehaviour
         PlayerBallTrajectory ballTrajectory =
             collision.collider.GetComponent<PlayerBallTrajectory>();
 
+        int ballDamage = 1;
+
         if (ballTrajectory != null)
         {
             ballTrajectory.RegisterBrickHit();
+            ballDamage = ballTrajectory.AttackStrength;
         }
 
-        TakeBallDamage();
+        TakeBallDamage(ballDamage);
     }
 
-    private void TakeBallDamage()
+    private void TakeBallDamage(int damage)
     {
         if (isDestroyed)
         {
             return;
         }
 
-        health--;
+        int safeDamage = Mathf.Max(1, damage);
+
+        health -= safeDamage;
 
         if (health <= 0)
         {

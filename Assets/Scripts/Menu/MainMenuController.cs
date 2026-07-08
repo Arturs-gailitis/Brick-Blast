@@ -64,10 +64,18 @@ public class MainMenuController : MonoBehaviour
             LevelManager.ResetSavedProgress();
             ScoreManager.ResetSavedScore();
         }
-        else if (saveGameBeforeChangingScene &&
-                 LevelManager.Instance != null)
+        else
         {
-            LevelManager.Instance.SaveCurrentGame();
+            if (LevelManager.Instance != null)
+            {
+                LevelManager.Instance.SaveCurrentBallAttackStrength();
+            }
+
+            if (saveGameBeforeChangingScene &&
+                LevelManager.Instance != null)
+            {
+                LevelManager.Instance.SaveCurrentGame();
+            }
         }
 
         SceneManager.LoadScene(SceneName);

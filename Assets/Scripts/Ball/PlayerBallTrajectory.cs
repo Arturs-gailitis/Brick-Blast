@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using System;
 
 public class PlayerBallTrajectory : MonoBehaviour
 {
@@ -26,6 +27,12 @@ public class PlayerBallTrajectory : MonoBehaviour
 
     [Header("No brick hit reset")]
     [SerializeField] private float noBrickHitTimeLimit = 6f;
+
+    [Header("Attack settings")]
+    [SerializeField] [Min(1)] private int attackStrength = 1;
+
+    public int AttackStrength => Mathf.Max(1, attackStrength);
+    public event Action<int> AttackStrengthChanged;
 
     private Rigidbody2D ballRigidbody;
     private CircleCollider2D ballCollider;
@@ -61,6 +68,8 @@ public class PlayerBallTrajectory : MonoBehaviour
         ballRigidbody.angularVelocity = 0f;
 
         ConfigureLineRenderer();
+
+        attackStrength = GameSaveManager.LoadBallAttackStrength();
 
         lineRenderer.positionCount = 0;
     }
@@ -183,6 +192,31 @@ public class PlayerBallTrajectory : MonoBehaviour
     public void RegisterBrickHit()
     {
         timeSinceLastBrickHit = 0f;
+    }
+
+    public void IncreaseAttackStrength(int amount)
+    {
+        int safeAmount = Mathf.Max(1, amount);
+
+        attackStrength += safeAmount;
+
+        GameSaveManager.SaveBallAttackStrength(AttackStrength);
+
+        NotifyAttackStrengthChanged();
+    }
+
+    public void ResetAttackStrength()
+    {
+        attackStrength = 1;
+
+        GameSaveManager.SaveBallAttackStrength(1);
+
+        NotifyAttackStrengthChanged();
+    }
+
+    private void NotifyAttackStrengthChanged()
+    {
+        AttackStrengthChanged?.Invoke(AttackStrength);
     }
 
     private void ReturnBallToLaunchPosition(bool moveBricksDown = true)
@@ -467,6 +501,8 @@ public class PlayerBallTrajectory : MonoBehaviour
         ignoreCurrentPointerUntilReleased = false;
         inputEnabledFrame = Time.frameCount;
 
+        NotifyAttackStrengthChanged();
+
         HideTrajectory();
     }
 
@@ -484,5 +520,30 @@ public class PlayerBallTrajectory : MonoBehaviour
         lineRenderer.numCapVertices = capSmoothness;
 
         lineRenderer.generateLightingData = false;
+    }
+
+    private void Start()
+    {
+        NotifyAttackStrengthChanged();
+    }
+
+    private void OnDisable()
+    {
+        SaveAttackStrengthIfAllowed();
+    }
+
+    private void OnDestroy()
+    {
+        SaveAttackStrengthIfAllowed();
+    }
+
+    private void SaveAttackStrengthIfAllowed()
+    {
+        if (LevelManager.Instance != null && LevelManager.Instance.IsGameOver)
+        {
+            return;
+        }
+
+        GameSaveManager.SaveBallAttackStrength(AttackStrength);
     }
 }

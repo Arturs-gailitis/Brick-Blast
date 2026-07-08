@@ -469,7 +469,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   brickSpawner: {fileID: 1138494233}
-  laserSpawner: {fileID: 1364226575}
+  abilitySpawner: {fileID: 1364226575}
   bottomWallLayer:
     serializedVersion: 2
     m_Bits: 64
@@ -507,6 +507,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   laserPrefab: {fileID: 4656815003314491021, guid: a4bf4f28491880449ad50d624af6e7a5, type: 3}
+  powerPrefab: {fileID: 8401951411293255244, guid: 7e9f70f4a80daa841bd199732a55a68f, type: 3}
   cellReferencePrefab: {fileID: 5845297711985745582, guid: dfcf4fde16325424ca57f3a31383abcf, type: 3}
   abilityConfigReader: {fileID: 1364226576}
   walls:
@@ -517,8 +518,8 @@ MonoBehaviour:
   verticalSpacing: 0.08
   distanceFromTopWall: 0.5
   horizontalOffset: 0.25
-  resizeLaserToCellSize: 1
-  laserSizeMultiplier: 0.75
+  resizeAbilityToCellSize: 1
+  abilitySizeMultiplier: 0.9
 --- !u!114 &1364226576
 MonoBehaviour:
   m_ObjectHideFlags: 0
