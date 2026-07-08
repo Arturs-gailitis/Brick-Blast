@@ -469,12 +469,84 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   brickSpawner: {fileID: 1138494233}
+  laserSpawner: {fileID: 1364226575}
   bottomWallLayer:
     serializedVersion: 2
     m_Bits: 64
   firstLevel: 1
   brickMoveDownDistance: 0.3
   gameOverDistanceFromBottomWall: 0.6
+--- !u!1 &1364226574
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1364226577}
+  - component: {fileID: 1364226576}
+  - component: {fileID: 1364226575}
+  m_Layer: 0
+  m_Name: AbilitySystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1364226575
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1364226574}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b91d4a43fd3e14645a46f24190a5ee02, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  laserPrefab: {fileID: 4656815003314491021, guid: a4bf4f28491880449ad50d624af6e7a5, type: 3}
+  cellReferencePrefab: {fileID: 5845297711985745582, guid: dfcf4fde16325424ca57f3a31383abcf, type: 3}
+  abilityConfigReader: {fileID: 1364226576}
+  walls:
+  - {fileID: 722885930230346285, guid: 888bfe6078e0ec74eb70c8109e1ee6b4, type: 3}
+  - {fileID: 8111543394360099883, guid: 22bb953019d1d3b49b66c04f100b7258, type: 3}
+  gridColumns: 7
+  horizontalSpacing: 0.08
+  verticalSpacing: 0.08
+  distanceFromTopWall: 0.5
+  horizontalOffset: 0.25
+  resizeLaserToCellSize: 1
+  laserSizeMultiplier: 0.75
+--- !u!114 &1364226576
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1364226574}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36511e8335c361b46a100b0417f486df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  abilityConfigCsv: {fileID: 4900000, guid: 783ffb2ddebc0f04fbe84866803f151e, type: 3}
+--- !u!4 &1364226577
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1364226574}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 667.6368, y: 932.40735, z: 2.0171967}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2000098363
 GameObject:
   m_ObjectHideFlags: 0
@@ -562,3 +634,4 @@ SceneRoots:
   - {fileID: 619394802}
   - {fileID: 1138494231}
   - {fileID: 2000098366}
+  - {fileID: 1364226577}

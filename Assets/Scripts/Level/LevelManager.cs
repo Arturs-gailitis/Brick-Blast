@@ -10,6 +10,7 @@ public class LevelManager : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private BrickSpawner brickSpawner;
+    [SerializeField] private LaserSpawner laserSpawner;
     [SerializeField] private LayerMask bottomWallLayer;
 
     [Header("Level settings")]
@@ -107,6 +108,10 @@ public class LevelManager : MonoBehaviour
             return;
         }
 
+        List<SavedAbilityData> savedAbilities = laserSpawner != null
+            ? laserSpawner.GetCurrentAbilities()
+            : new List<SavedAbilityData>();
+
         SavedGameData savedGame = new SavedGameData
         {
             level = CurrentLevel,
@@ -114,7 +119,9 @@ public class LevelManager : MonoBehaviour
                 ? ScoreManager.Instance.CurrentScore
                 : 0,
             ball = ball.CreateSaveData(),
-            bricks = savedBricks
+            bricks = savedBricks,
+            abilitiesWereSaved = true,
+            abilities = savedAbilities
         };
 
         GameSaveManager.SaveGame(savedGame);
@@ -230,6 +237,18 @@ public class LevelManager : MonoBehaviour
 
         CurrentLevel = savedGame.level;
 
+        if (laserSpawner != null)
+        {
+            if (savedGame.abilitiesWereSaved)
+            {
+                laserSpawner.SpawnSavedAbilities(savedGame.abilities);
+            }
+            else
+            {
+                laserSpawner.SpawnLevel(CurrentLevel);
+            }
+        }
+
         remainingBricks = brickSpawner.SpawnSavedLevel(savedGame.bricks);
 
         if (remainingBricks == 0)
@@ -277,6 +296,8 @@ public class LevelManager : MonoBehaviour
 
         CurrentLevel = level;
 
+        laserSpawner?.SpawnLevel(CurrentLevel);
+
         remainingBricks = brickSpawner.SpawnLevel(CurrentLevel);
 
         if (ScoreManager.Instance != null)
@@ -309,9 +330,10 @@ public class LevelManager : MonoBehaviour
 
         foreach (BrickCollision brick in bricks)
         {
-            brick.transform.position +=
-                Vector3.down * brickMoveDownDistance;
+            brick.transform.position += Vector3.down * brickMoveDownDistance;
         }
+
+        laserSpawner?.MoveAllLasersDown(brickMoveDownDistance);
 
         CheckForGameOver();
     }

@@ -69,23 +69,59 @@ public class BrickCollision : MonoBehaviour
             return;
         }
 
-        PlayerBallTrajectory ballTrajectory = collision.collider.GetComponent<PlayerBallTrajectory>();
+        PlayerBallTrajectory ballTrajectory =
+            collision.collider.GetComponent<PlayerBallTrajectory>();
 
         if (ballTrajectory != null)
         {
             ballTrajectory.RegisterBrickHit();
         }
 
-        TakeHit();
+        TakeBallDamage();
     }
 
-    private void TakeHit()
+    private void TakeBallDamage()
     {
+        if (isDestroyed)
+        {
+            return;
+        }
+
         health--;
 
-        if (health > 0)
+        if (health <= 0)
         {
-            UpdateBrickVisuals();
+            DestroyBrickAndGiveScore();
+            return;
+        }
+
+        UpdateBrickVisuals();
+    }
+
+    public void TakeLaserDamage(int damage)
+    {
+        if (isDestroyed)
+        {
+            return;
+        }
+
+        int safeDamage = Mathf.Max(1, damage);
+
+        health -= safeDamage;
+
+        if (health <= 0)
+        {
+            DestroyBrickAndGiveScore();
+            return;
+        }
+
+        UpdateBrickVisuals();
+    }
+
+    private void DestroyBrickAndGiveScore()
+    {
+        if (isDestroyed)
+        {
             return;
         }
 

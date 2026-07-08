@@ -8,4 +8,7 @@ public class SavedGameData
     public int score;
     public SavedBallData ball;
     public List<SavedBrickData> bricks = new List<SavedBrickData>();
+
+    public bool abilitiesWereSaved;
+    public List<SavedAbilityData> abilities = new List<SavedAbilityData>();
 }
