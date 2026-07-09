@@ -227,6 +227,38 @@ public class LevelManager : MonoBehaviour
         }
     }
 
+    public void RetryFromFirstLevel()
+    {
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.ResetScore();
+        }
+
+        PlayerBallTrajectory ball = GetPlayerBall();
+
+        if (ball != null)
+        {
+            ball.ResetAttackStrength();
+        }
+        else
+        {
+            GameSaveManager.SaveBallAttackStrength(1);
+        }
+
+        GameSaveManager.ClearSavedGame();
+        GameSaveManager.SaveBallAttackStrength(1);
+
+        SaveLevelProgress(firstLevel);
+        LoadLevel(firstLevel);
+
+        ball = GetPlayerBall();
+
+        if (ball != null)
+        {
+            ball.SetGameplayInputEnabled(true);
+        }
+    }
+
     private void ShowLevelCompleteMenu()
     {
         int nextLevel = CurrentLevel + 1;

@@ -1,15 +1,23 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class SettingsUI : MonoBehaviour
 {
     [Header("UI references")]
     [SerializeField] private GameObject settingsPanel;
+    [SerializeField] private Button retryFromFirstLevelButton;
 
     [Header("Gameplay")]
     [SerializeField] private PlayerBallTrajectory playerBall;
 
     private void Awake()
     {
+        if (retryFromFirstLevelButton != null)
+        {
+            retryFromFirstLevelButton.onClick.RemoveAllListeners();
+            retryFromFirstLevelButton.onClick.AddListener(RetryFromFirstLevel);
+        }
+
         SetSettingsVisible(false);
     }
 
@@ -30,6 +38,16 @@ public class SettingsUI : MonoBehaviour
 
     public void HideSettings()
     {
+        SetSettingsVisible(false);
+    }
+
+    private void RetryFromFirstLevel()
+    {
+        if (LevelManager.Instance != null)
+        {
+            LevelManager.Instance.RetryFromFirstLevel();
+        }
+
         SetSettingsVisible(false);
     }
 
