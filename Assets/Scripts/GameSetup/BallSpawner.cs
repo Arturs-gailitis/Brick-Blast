@@ -1,58 +1,118 @@
+using System.Collections;
 using UnityEngine;
 
 public class BallSpawner : MonoBehaviour
 {
     [SerializeField] private GameObject playerBallPrefab;
+
+    [Header("Optional fallback references")]
     [SerializeField] private Transform bottomWall;
     [SerializeField] private Transform sideWalls;
 
+    [Header("Spawn settings")]
     [SerializeField] private float distanceFromWall = 0.1f;
+    [SerializeField] private float insideSideWallMargin = 0.03f;
 
- private void Start()
-{
-    Collider2D bottomWallCollider = bottomWall.GetComponent<Collider2D>();
-    Collider2D leftWallCollider = GetWallCollider("LeftWall");
-    Collider2D rightWallCollider = GetWallCollider("RightWall");
-
-    CircleCollider2D ballCollider = playerBallPrefab.GetComponent<CircleCollider2D>();
-
-    float ballRadius = ballCollider.radius * playerBallPrefab.transform.localScale.x;
-
-    float minX = leftWallCollider.bounds.max.x + ballRadius;
-    float maxX = rightWallCollider.bounds.min.x - ballRadius;
-
-    float randomX = Random.Range(minX, maxX);
-
-    float spawnY = bottomWallCollider.bounds.max.y + ballRadius + distanceFromWall;
-
-    Vector3 spawnPosition = new Vector3(randomX, spawnY, 0f);
-
-    GameObject ball = Instantiate(playerBallPrefab);
-
-    ball.SetActive(false);
-    ball.transform.position = spawnPosition;
-
-    Rigidbody2D ballRigidbody = ball.GetComponent<Rigidbody2D>();
-
-    if (ballRigidbody != null)
+    private IEnumerator Start()
     {
-        ballRigidbody.position = spawnPosition;
-        ballRigidbody.linearVelocity = Vector2.zero;
-        ballRigidbody.angularVelocity = 0f;
+        yield return null;
+
+        Physics2D.SyncTransforms();
+
+        Collider2D bottomWallCollider = GetRuntimeBottomWall();
+        Collider2D leftWallCollider = GetRuntimeWallCollider("LeftWall");
+        Collider2D rightWallCollider = GetRuntimeWallCollider("RightWall");
+
+        if (playerBallPrefab == null || bottomWallCollider == null || leftWallCollider == null || rightWallCollider == null)
+        {
+            yield break;
+        }
+
+        CircleCollider2D ballCollider = playerBallPrefab.GetComponent<CircleCollider2D>();
+
+        if (ballCollider == null)
+        {
+            yield break;
+        }
+
+        float ballScale = Mathf.Max(
+            Mathf.Abs(playerBallPrefab.transform.localScale.x),
+            Mathf.Abs(playerBallPrefab.transform.localScale.y)
+        );
+
+        float ballRadius = ballCollider.radius * ballScale;
+
+        float minX = leftWallCollider.bounds.max.x + ballRadius + insideSideWallMargin;
+        float maxX = rightWallCollider.bounds.min.x - ballRadius - insideSideWallMargin;
+
+        if (minX >= maxX)
+        {
+            yield break;
+        }
+
+        float randomX = Random.Range(minX, maxX);
+        randomX = Mathf.Clamp(randomX, minX, maxX);
+
+        float spawnY = bottomWallCollider.bounds.max.y + ballRadius + distanceFromWall;
+
+        Vector3 spawnPosition = new Vector3(randomX, spawnY, 0f);
+
+        GameObject ball = Instantiate(playerBallPrefab);
+        ball.SetActive(false);
+
+        ball.transform.position = spawnPosition;
+
+        Rigidbody2D ballRigidbody = ball.GetComponent<Rigidbody2D>();
+
+        if (ballRigidbody != null)
+        {
+            ballRigidbody.position = spawnPosition;
+            ballRigidbody.linearVelocity = Vector2.zero;
+            ballRigidbody.angularVelocity = 0f;
+        }
+
+        ball.SetActive(true);
     }
 
-    ball.SetActive(true);
-}
-
-    private Collider2D GetWallCollider(string wallName)
+    private Collider2D GetRuntimeBottomWall()
     {
-        Collider2D[] colliders = sideWalls.GetComponentsInChildren<Collider2D>();
+        GameObject bottomWallObject = GameObject.Find("ButtomWall");
+
+        if (bottomWallObject != null)
+        {
+            return bottomWallObject.GetComponent<Collider2D>();
+        }
+
+        if (bottomWall != null && bottomWall.gameObject.scene.IsValid())
+        {
+            return bottomWall.GetComponent<Collider2D>();
+        }
+
+        return null;
+    }
+
+    private Collider2D GetRuntimeWallCollider(string wallName)
+    {
+        Collider2D[] colliders = FindObjectsByType<Collider2D>(FindObjectsSortMode.None);
 
         foreach (Collider2D wallCollider in colliders)
         {
             if (wallCollider.gameObject.name == wallName)
             {
                 return wallCollider;
+            }
+        }
+
+        if (sideWalls != null && sideWalls.gameObject.scene.IsValid())
+        {
+            Collider2D[] fallbackColliders = sideWalls.GetComponentsInChildren<Collider2D>();
+
+            foreach (Collider2D wallCollider in fallbackColliders)
+            {
+                if (wallCollider.gameObject.name == wallName)
+                {
+                    return wallCollider;
+                }
             }
         }
 

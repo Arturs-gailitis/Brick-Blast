@@ -8,7 +8,11 @@ public class SpawnWalls : MonoBehaviour
     {
         for (int i = 0; i < WallPrefab.Length; i++)
         {
-            Instantiate(WallPrefab[i]);
+            GameObject wall = Instantiate(WallPrefab[i]);
+
+            wall.name = WallPrefab[i].name;
         }
+
+        Physics2D.SyncTransforms();
     }
 }
