@@ -11,10 +11,22 @@ public class BrickSpawner : MonoBehaviour
     [SerializeField] private Transform[] walls;
 
     [Header("Spacing")]
+    [SerializeField] [Min(1)] private int gridColumns = 7;
     [SerializeField] private float horizontalSpacing = 0.08f;
     [SerializeField] private float verticalSpacing = 0.08f;
     [SerializeField] private float distanceFromTopWall = 0.5f;
-    [SerializeField] private float horizontalOffset = 0.15f;
+    [SerializeField] private float horizontalOffset = 0.25f;
+
+    private List<BrickConfig> currentLevelBricks = new List<BrickConfig>();
+    private int nextRowToSpawn;
+    private int maxRowInLevel = -1;
+    private int selectedLevel = 1;
+
+    private float cachedFirstBrickX;
+    private float cachedFirstBrickY;
+    private float cachedBrickWidth;
+    private float cachedBrickHeight;
+    private bool hasCachedGrid;
 
     private Transform bricksParent;
 
@@ -31,85 +43,43 @@ public class BrickSpawner : MonoBehaviour
 
     public int SpawnLevel(int level)
     {
+        return SpawnLevel(level, 3);
+        }
+
+    public int SpawnLevel(int level, int visibleRowsAtStart)
+    {
         ClearBricks();
+
+        selectedLevel = level;
+        nextRowToSpawn = 0;
+        maxRowInLevel = -1;
+        hasCachedGrid = false;
 
         if (brickPrefab == null || brickConfigReader == null)
         {
             return 0;
         }
 
-        if (!TryGetWalls(out Collider2D leftWall, out Collider2D rightWall, out Collider2D topWall))
+        currentLevelBricks = brickConfigReader.GetBricksForLevel(level);
+
+        if (currentLevelBricks.Count == 0)
         {
             return 0;
         }
 
-        BoxCollider2D brickCollider = brickPrefab.GetComponent<BoxCollider2D>();
-
-        if (brickCollider == null)
+        if (!PrepareGrid())
         {
             return 0;
         }
 
-        List<BrickConfig> levelBricks = brickConfigReader.GetBricksForLevel(level);
+        maxRowInLevel = GetMaxRow(currentLevelBricks);
 
-        if (levelBricks.Count == 0)
+        for (int i = 0; i < visibleRowsAtStart; i++)
         {
-            return 0;
+            SpawnCurrentNextRow(nextRowToSpawn);
         }
 
-        float brickWidth = brickCollider.size.x * Mathf.Abs(brickPrefab.transform.localScale.x);
-
-        float brickHeight = brickCollider.size.y * Mathf.Abs(brickPrefab.transform.localScale.y);
-
-        int largestColumn = 0;
-
-        foreach (BrickConfig brickConfig in levelBricks)
-        {
-            largestColumn = Mathf.Max(largestColumn, brickConfig.column);
-        }
-
-        int gridColumns = largestColumn + 1;
-
-        float gridWidth = gridColumns * brickWidth + (gridColumns - 1) * horizontalSpacing;
-
-        float availableWidth = rightWall.bounds.min.x - leftWall.bounds.max.x;
-
-        if (gridWidth > availableWidth)
-        {
-            return 0;
-        }
-
-        float firstBrickX =
-            (leftWall.bounds.max.x + rightWall.bounds.min.x) / 2f - gridWidth / 2f + brickWidth / 2f +
-            horizontalOffset;
-
-        float firstBrickY = topWall.bounds.min.y - distanceFromTopWall - brickHeight / 2f;
-
-        int spawnedBricks = 0;
-
-        foreach (BrickConfig brickConfig in levelBricks)
-        {
-            float x = firstBrickX + brickConfig.column * (brickWidth + horizontalSpacing);
-
-            float y = firstBrickY - brickConfig.row * (brickHeight + verticalSpacing);
-
-            GameObject newBrick = Instantiate(brickPrefab, new Vector3(x, y, 0f), Quaternion.identity, bricksParent);
-
-            BrickCollision brickCollision = newBrick.GetComponent<BrickCollision>();
-
-            if (brickCollision == null)
-            {
-                Destroy(newBrick);
-                continue;
-            }
-
-            newBrick.name = "Brick_" + level + "_" + brickConfig.row + "_" + brickConfig.column;
-
-            brickCollision.Configure(brickConfig);
-            spawnedBricks++;
-        }
-
-        return spawnedBricks;
+        return currentLevelBricks.Count;
     }
 
     public int SpawnSavedLevel(List<SavedBrickData> savedBricks)
@@ -217,5 +187,139 @@ public class BrickSpawner : MonoBehaviour
         {
             Destroy(bricksParent.GetChild(i).gameObject);
         }
+    }
+
+    public int SpawnNextRowAtTop()
+    {
+        return SpawnCurrentNextRow(0);
+        }
+
+    private int SpawnCurrentNextRow(int visualRow)
+    {
+        if (!hasCachedGrid || currentLevelBricks == null)
+        {
+            return 0;
+        }
+
+        if (nextRowToSpawn > maxRowInLevel)
+        {
+            return 0;
+        }
+
+        int spawnedBricks = SpawnRow(nextRowToSpawn, visualRow);
+
+        nextRowToSpawn++;
+
+        return spawnedBricks;
+    }
+
+    private int SpawnRow(int csvRow, int visualRow)
+    {
+        int spawnedBricks = 0;
+
+        foreach (BrickConfig brickConfig in currentLevelBricks)
+        {
+            if (brickConfig.row != csvRow)
+            {
+                continue;
+            }
+
+            if (brickConfig.column >= gridColumns)
+            {
+                continue;
+            }
+
+            float x = cachedFirstBrickX + brickConfig.column * (cachedBrickWidth + horizontalSpacing);
+            float y = cachedFirstBrickY - visualRow * (cachedBrickHeight + verticalSpacing);
+
+            GameObject newBrick = Instantiate(
+                brickPrefab,
+                new Vector3(x, y, 0f),
+                Quaternion.identity,
+                bricksParent
+            );
+
+            BrickCollision brickCollision = newBrick.GetComponent<BrickCollision>();
+
+            if (brickCollision == null)
+            {
+                Destroy(newBrick);
+                continue;
+            }
+
+            newBrick.name =
+                "Brick_" +
+                selectedLevel + "_" +
+                brickConfig.row + "_" +
+                brickConfig.column;
+
+            brickCollision.Configure(brickConfig);
+
+            spawnedBricks++;
+        }
+
+        return spawnedBricks;
+    }
+
+    private bool PrepareGrid()
+    {
+        if (!TryGetWalls(out Collider2D leftWall, out Collider2D rightWall, out Collider2D topWall))
+        {
+            return false;
+        }
+
+        BoxCollider2D brickCollider = brickPrefab.GetComponent<BoxCollider2D>();
+
+        if (brickCollider == null)
+        {
+            return false;
+        }
+
+        cachedBrickWidth =
+            brickCollider.size.x *
+            Mathf.Abs(brickPrefab.transform.localScale.x);
+
+        cachedBrickHeight =
+            brickCollider.size.y *
+            Mathf.Abs(brickPrefab.transform.localScale.y);
+
+        float gridWidth =
+            gridColumns * cachedBrickWidth +
+            (gridColumns - 1) * horizontalSpacing;
+
+        float availableWidth =
+            rightWall.bounds.min.x - leftWall.bounds.max.x;
+
+        if (gridWidth > availableWidth)
+        {
+            return false;
+        }
+
+        cachedFirstBrickX =
+            (leftWall.bounds.max.x + rightWall.bounds.min.x) / 2f -
+            gridWidth / 2f +
+            cachedBrickWidth / 2f +
+            horizontalOffset;
+
+        cachedFirstBrickY =
+            topWall.bounds.min.y -
+            distanceFromTopWall -
+            cachedBrickHeight / 2f;
+
+        hasCachedGrid = true;
+
+        return true;
+    }
+
+    private int GetMaxRow(List<BrickConfig> bricks)
+    {
+        int maxRow = -1;
+
+        foreach (BrickConfig brickConfig in bricks)
+        {
+            maxRow = Mathf.Max(maxRow, brickConfig.row);
+        }
+
+        return maxRow;
     }
 }

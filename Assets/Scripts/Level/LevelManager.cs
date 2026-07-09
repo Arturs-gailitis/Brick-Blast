@@ -17,8 +17,12 @@ public class LevelManager : MonoBehaviour
     [SerializeField] [Min(1)] private int firstLevel = 1;
 
     [Header("Brick movement after shot")]
-    [SerializeField] [Min(0f)] private float brickMoveDownDistance = 1f;
+    [SerializeField] [Min(0f)] private float brickMoveDownDistance;
     [SerializeField] [Min(0.01f)] private float brickMoveDownDuration = 0.25f;
+
+    [Header("Rows loading")]
+    [SerializeField] [Min(1)] private int visibleRowsAtLevelStart = 3;
+    [SerializeField] [Min(1)] private int movesBeforeNewRow = 2;
 
     [Header("Game over settings")]
     [SerializeField] [Min(0f)]
@@ -33,6 +37,7 @@ public class LevelManager : MonoBehaviour
     private bool isGameOver;
     private bool isMovingObjectsDown;
     private int attackStrengthAtLevelStart = 1;
+    private int downMoveCounter = 0;
 
     private LevelCompleteUI levelCompleteUI;
     private GameOverUI gameOverUI;
@@ -355,9 +360,11 @@ public class LevelManager : MonoBehaviour
 
         CurrentLevel = level;
 
-        abilitySpawner?.SpawnLevel(CurrentLevel);
+        downMoveCounter = 0;
 
-        remainingBricks = brickSpawner.SpawnLevel(CurrentLevel);
+        abilitySpawner?.SpawnLevel(CurrentLevel, visibleRowsAtLevelStart);
+
+        remainingBricks = brickSpawner.SpawnLevel(CurrentLevel, visibleRowsAtLevelStart);
 
         if (ScoreManager.Instance != null)
         {
@@ -456,6 +463,23 @@ public class LevelManager : MonoBehaviour
         if (abilityMoveCoroutine != null)
         {
             yield return abilityMoveCoroutine;
+        }
+
+        downMoveCounter++;
+
+        if (downMoveCounter >= movesBeforeNewRow)
+        {
+            if (brickSpawner != null)
+            {
+                brickSpawner.SpawnNextRowAtTop();
+            }
+
+            if (abilitySpawner != null)
+            {
+                abilitySpawner.SpawnNextRowAtTop();
+            }
+
+            downMoveCounter = 0;
         }
 
         isMovingObjectsDown = false;

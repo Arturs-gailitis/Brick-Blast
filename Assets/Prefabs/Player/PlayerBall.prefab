@@ -275,9 +275,13 @@ MonoBehaviour:
   maxBounces: 5
   trajectoryDistance: 100
   rayStartOffset: 0.05
+  cornerSmoothness: 8
+  capSmoothness: 6
+  minimumAimDistance: 0.35
   ballSpeed: 9
   bottomWallGap: 0.03
   noBrickHitTimeLimit: 6
+  attackStrength: 1
 --- !u!114 &352935097784014177
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -307,6 +311,10 @@ PrefabInstance:
     - target: {fileID: 1486746710848352421, guid: 0ec7739c6f0ce5c4a8436931c9e6a4fc, type: 3}
       propertyPath: m_Name
       value: Trajectory Line
+      objectReference: {fileID: 0}
+    - target: {fileID: 4510148742287504138, guid: 0ec7739c6f0ce5c4a8436931c9e6a4fc, type: 3}
+      propertyPath: m_Positions.Array.size
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4822113525464511029, guid: 0ec7739c6f0ce5c4a8436931c9e6a4fc, type: 3}
       propertyPath: m_LocalPosition.x

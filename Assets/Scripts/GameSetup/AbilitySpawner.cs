@@ -20,13 +20,23 @@ public class AbilitySpawner : MonoBehaviour
     [SerializeField] private float horizontalSpacing = 0.08f;
     [SerializeField] private float verticalSpacing = 0.08f;
     [SerializeField] private float distanceFromTopWall = 0.5f;
-    [SerializeField] private float horizontalOffset = 0.25f;
+    [SerializeField] private float horizontalOffset;
 
     [Header("Ability size")]
     [SerializeField] private bool resizeAbilityToCellSize = true;
     [SerializeField] [Range(0.1f, 1f)] private float abilitySizeMultiplier = 0.9f;
 
     private Transform abilitiesParent;
+
+    private List<AbilityConfig> currentLevelAbilities = new List<AbilityConfig>();
+    private int nextRowToSpawn;
+    private int maxRowInLevel = -1;
+
+    private float cachedFirstCellX;
+    private float cachedFirstCellY;
+    private float cachedCellWidth;
+    private float cachedCellHeight;
+    private bool hasCachedGrid;
 
     private void Awake()
     {
@@ -36,86 +46,41 @@ public class AbilitySpawner : MonoBehaviour
 
     public int SpawnLevel(int level)
     {
-        ClearLasers();
+        return SpawnLevel(level, 3);
+    }
+
+    public int SpawnLevel(int level, int visibleRowsAtStart)
+    {
+        ClearAbilities();
+
+        nextRowToSpawn = 0;
+        maxRowInLevel = -1;
+        hasCachedGrid = false;
 
         if (abilityConfigReader == null)
         {
             return 0;
         }
 
-        if (!TryGetWalls(out Collider2D leftWall, out Collider2D rightWall, out Collider2D topWall))
+        currentLevelAbilities = abilityConfigReader.GetAbilitiesForLevel(level);
+
+        if (currentLevelAbilities.Count == 0)
         {
             return 0;
         }
 
-        if (!TryGetCellSize(out float cellWidth, out float cellHeight))
+        if (!PrepareGrid())
         {
             return 0;
         }
 
-        List<AbilityConfig> levelAbilities = abilityConfigReader.GetAbilitiesForLevel(level);
-
-        if (levelAbilities.Count == 0)
-        {
-            return 0;
-        }
-
-        float gridWidth = gridColumns * cellWidth + (gridColumns - 1) * horizontalSpacing;
-        float availableWidth = rightWall.bounds.min.x - leftWall.bounds.max.x;
-
-        if (gridWidth > availableWidth)
-        {
-            return 0;
-        }
-
-        float firstCellX =
-            (leftWall.bounds.max.x + rightWall.bounds.min.x) / 2f -
-            gridWidth / 2f +
-            cellWidth / 2f +
-            horizontalOffset;
-
-        float firstCellY = topWall.bounds.min.y - distanceFromTopWall - cellHeight / 2f;
+        maxRowInLevel = GetMaxRow(currentLevelAbilities);
 
         int spawnedAbilities = 0;
 
-        foreach (AbilityConfig abilityConfig in levelAbilities)
+        for (int i = 0; i < visibleRowsAtStart; i++)
         {
-            if (abilityConfig.column >= gridColumns)
-            {
-                continue;
-            }
-
-            GameObject selectedPrefab = GetPrefabForAbility(abilityConfig.abilityType);
-
-            if (selectedPrefab == null)
-            {
-                continue;
-            }
-
-            float x = firstCellX + abilityConfig.column * (cellWidth + horizontalSpacing);
-            float y = firstCellY - abilityConfig.row * (cellHeight + verticalSpacing);
-
-            GameObject newAbility = Instantiate(
-                selectedPrefab,
-                new Vector3(x, y, 0f),
-                Quaternion.identity,
-                abilitiesParent
-            );
-
-            if (resizeAbilityToCellSize)
-            {
-                ResizeAbilityToCellSize(newAbility, cellWidth, cellHeight);
-            }
-
-            newAbility.name =
-                abilityConfig.abilityType + "_" +
-                level + "_" +
-                abilityConfig.row + "_" +
-                abilityConfig.column;
-
-            ConfigureSpawnedAbility(newAbility, abilityConfig);
-
-            spawnedAbilities++;
+            spawnedAbilities += SpawnCurrentNextRow(nextRowToSpawn, level);
         }
 
         return spawnedAbilities;
@@ -485,5 +450,133 @@ public class AbilitySpawner : MonoBehaviour
             Mathf.Abs(referencePrefab.transform.localScale.y);
 
         return cellWidth > 0f && cellHeight > 0f;
+    }
+
+    public int SpawnNextRowAtTop()
+    {
+        return SpawnCurrentNextRow(0, 0);
+    }
+
+    private int SpawnCurrentNextRow(int visualRow, int levelForName)
+    {
+        if (!hasCachedGrid || currentLevelAbilities == null)
+        {
+            return 0;
+        }
+
+        if (nextRowToSpawn > maxRowInLevel)
+        {
+            return 0;
+        }
+
+        int spawnedAbilities = SpawnRow(nextRowToSpawn, visualRow, levelForName);
+
+        nextRowToSpawn++;
+
+        return spawnedAbilities;
+    }
+
+    private int SpawnRow(int csvRow, int visualRow, int levelForName)
+    {
+        int spawnedAbilities = 0;
+
+        foreach (AbilityConfig abilityConfig in currentLevelAbilities)
+        {
+            if (abilityConfig.row != csvRow)
+            {
+                continue;
+            }
+
+            if (abilityConfig.column >= gridColumns)
+            {
+                continue;
+            }
+
+            GameObject selectedPrefab = GetPrefabForAbility(abilityConfig.abilityType);
+
+            if (selectedPrefab == null)
+            {
+                continue;
+            }
+
+            float x = cachedFirstCellX + abilityConfig.column * (cachedCellWidth + horizontalSpacing);
+            float y = cachedFirstCellY - visualRow * (cachedCellHeight + verticalSpacing);
+
+            GameObject newAbility = Instantiate(
+                selectedPrefab,
+                new Vector3(x, y, 0f),
+                Quaternion.identity,
+                abilitiesParent
+            );
+
+            if (resizeAbilityToCellSize)
+            {
+                ResizeAbilityToCellSize(newAbility, cachedCellWidth, cachedCellHeight);
+            }
+
+            newAbility.name =
+                abilityConfig.abilityType + "_" +
+                levelForName + "_" +
+                abilityConfig.row + "_" +
+                abilityConfig.column;
+
+            ConfigureSpawnedAbility(newAbility, abilityConfig);
+
+            spawnedAbilities++;
+        }
+
+        return spawnedAbilities;
+    }
+
+    private bool PrepareGrid()
+    {
+        if (!TryGetWalls(out Collider2D leftWall, out Collider2D rightWall, out Collider2D topWall))
+        {
+            return false;
+        }
+
+        if (!TryGetCellSize(out cachedCellWidth, out cachedCellHeight))
+        {
+            return false;
+        }
+
+        float gridWidth =
+            gridColumns * cachedCellWidth +
+            (gridColumns - 1) * horizontalSpacing;
+
+        float availableWidth =
+            rightWall.bounds.min.x - leftWall.bounds.max.x;
+
+        if (gridWidth > availableWidth)
+        {
+            return false;
+        }
+
+        cachedFirstCellX =
+            (leftWall.bounds.max.x + rightWall.bounds.min.x) / 2f -
+            gridWidth / 2f +
+            cachedCellWidth / 2f +
+            horizontalOffset;
+
+        cachedFirstCellY =
+            topWall.bounds.min.y -
+            distanceFromTopWall -
+            cachedCellHeight / 2f;
+
+        hasCachedGrid = true;
+
+        return true;
+    }
+
+    private int GetMaxRow(List<AbilityConfig> abilities)
+    {
+        int maxRow = -1;
+
+        foreach (AbilityConfig abilityConfig in abilities)
+        {
+            maxRow = Mathf.Max(maxRow, abilityConfig.row);
+        }
+
+        return maxRow;
     }
 }
