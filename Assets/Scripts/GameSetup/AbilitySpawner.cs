@@ -7,6 +7,7 @@ public class AbilitySpawner : MonoBehaviour
     [Header("References")]
     [SerializeField] private GameObject laserPrefab;
     [SerializeField] private GameObject powerPrefab;
+    [SerializeField] private GameObject directionPrefab;
     [SerializeField] private GameObject cellReferencePrefab;
     [SerializeField] private AbilityConfigReader abilityConfigReader;
 
@@ -131,6 +132,11 @@ public class AbilitySpawner : MonoBehaviour
             return powerPrefab;
         }
 
+        if (string.Equals(abilityType, "direction", StringComparison.OrdinalIgnoreCase))
+        {
+            return directionPrefab;
+        }
+
         return null;
     }
 
@@ -161,6 +167,18 @@ public class AbilitySpawner : MonoBehaviour
             {
                 powerAbility.Configure(abilityConfig);
             }
+        }
+
+        if (string.Equals(abilityConfig.abilityType, "direction", StringComparison.OrdinalIgnoreCase))
+        {
+            DirectionAbility directionAbility = abilityObject.GetComponent<DirectionAbility>();
+
+            if (directionAbility != null)
+            {
+                directionAbility.Configure(abilityConfig);
+            }
+
+            return;
         }
     }
 
@@ -305,6 +323,23 @@ public class AbilitySpawner : MonoBehaviour
                 {
                     savedAbilities.Add(savedPower);
                 }
+
+                continue;
+                
+            }
+
+            DirectionAbility directionAbility = abilityTransform.GetComponent<DirectionAbility>();
+
+            if (directionAbility != null)
+            {
+                SavedAbilityData savedDirection = directionAbility.CreateSaveData();
+
+                if (savedDirection != null)
+                {
+                    savedAbilities.Add(savedDirection);
+                }
+
+                continue;
             }
         }
 
