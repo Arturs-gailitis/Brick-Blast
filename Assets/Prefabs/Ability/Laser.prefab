@@ -189,6 +189,7 @@ GameObject:
   - component: {fileID: 2018738561649759341}
   - component: {fileID: 7345808452597781619}
   - component: {fileID: 7238630893937069609}
+  - component: {fileID: 9065946708581732355}
   m_Layer: 0
   m_Name: Laser
   m_TagString: Untagged
@@ -322,3 +323,17 @@ MonoBehaviour:
   defaultBeamVisibleSeconds: 0.12
   beamDistance: 20
   beamWidth: 0.08
+--- !u!114 &9065946708581732355
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4656815003314491021}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e94d0c4137dfc004db8a559a5cac2782, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hitSound: {fileID: 8300000, guid: 49419e9675bd5984fb81f8aef0dd475d, type: 3}
+  volume: 0.6

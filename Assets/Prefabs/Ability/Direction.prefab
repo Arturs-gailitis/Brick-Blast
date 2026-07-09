@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 7915066926193471255}
   - component: {fileID: 4207273091743133475}
   - component: {fileID: 2942640043904517469}
+  - component: {fileID: 2931326733919060976}
   m_Layer: 0
   m_Name: Direction
   m_TagString: Untagged
@@ -139,6 +140,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   directionText: {fileID: 3093688682273206575}
+--- !u!114 &2931326733919060976
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 835050101104889381}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e94d0c4137dfc004db8a559a5cac2782, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hitSound: {fileID: 8300000, guid: 1ab26e0c3f20d1a4a94a3f800e946759, type: 3}
+  volume: 0.4
 --- !u!1 &7025242715804863509
 GameObject:
   m_ObjectHideFlags: 0
