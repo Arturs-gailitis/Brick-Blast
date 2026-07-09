@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -182,21 +183,61 @@ public class AbilitySpawner : MonoBehaviour
         }
     }
 
-    public void MoveAllLasersDown(float distance)
-    {
-        MoveAllAbilitiesDown(distance);
-    }
-
-    public void MoveAllAbilitiesDown(float distance)
+    public IEnumerator MoveAllAbilitiesDownSmooth(float distance, float duration)
     {
         if (abilitiesParent == null)
         {
-            return;
+            yield break;
         }
 
-        for (int i = 0; i < abilitiesParent.childCount; i++)
+        int abilityCount = abilitiesParent.childCount;
+
+        Transform[] abilityTransforms = new Transform[abilityCount];
+        Vector3[] startPositions = new Vector3[abilityCount];
+        Vector3[] targetPositions = new Vector3[abilityCount];
+
+        for (int i = 0; i < abilityCount; i++)
         {
-            abilitiesParent.GetChild(i).position += Vector3.down * distance;
+            Transform abilityTransform = abilitiesParent.GetChild(i);
+
+            abilityTransforms[i] = abilityTransform;
+            startPositions[i] = abilityTransform.position;
+            targetPositions[i] = startPositions[i] + Vector3.down * distance;
+        }
+
+        float elapsedTime = 0f;
+
+        while (elapsedTime < duration)
+        {
+            elapsedTime += Time.deltaTime;
+
+            float movePercent = Mathf.Clamp01(elapsedTime / duration);
+
+            for (int i = 0; i < abilityTransforms.Length; i++)
+            {
+                if (abilityTransforms[i] == null)
+                {
+                    continue;
+                }
+
+                abilityTransforms[i].position = Vector3.Lerp(
+                    startPositions[i],
+                    targetPositions[i],
+                    movePercent
+                );
+            }
+
+            yield return null;
+        }
+
+        for (int i = 0; i < abilityTransforms.Length; i++)
+        {
+            if (abilityTransforms[i] == null)
+            {
+                continue;
+            }
+
+            abilityTransforms[i].position = targetPositions[i];
         }
     }
 

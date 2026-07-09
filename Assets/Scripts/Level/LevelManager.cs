@@ -18,6 +18,7 @@ public class LevelManager : MonoBehaviour
 
     [Header("Brick movement after shot")]
     [SerializeField] [Min(0f)] private float brickMoveDownDistance = 1f;
+    [SerializeField] [Min(0.01f)] private float brickMoveDownDuration = 0.25f;
 
     [Header("Game over settings")]
     [SerializeField] [Min(0f)]
@@ -30,6 +31,7 @@ public class LevelManager : MonoBehaviour
     private bool isChangingLevel;
     private bool waitingForNextLevel;
     private bool isGameOver;
+    private bool isMovingObjectsDown;
     private int attackStrengthAtLevelStart = 1;
 
     private LevelCompleteUI levelCompleteUI;
@@ -380,19 +382,83 @@ public class LevelManager : MonoBehaviour
 
     public void MoveAllBricksDown()
     {
-        if (isChangingLevel || isGameOver)
+        if (isChangingLevel || isGameOver || isMovingObjectsDown)
         {
             return;
         }
 
-        BrickCollision[] bricks = FindObjectsByType<BrickCollision>(FindObjectsSortMode.None);
+        StartCoroutine(MoveAllObjectsDownSmooth());
+    }
 
-        foreach (BrickCollision brick in bricks)
+    private IEnumerator MoveAllObjectsDownSmooth()
+    {
+        isMovingObjectsDown = true;
+
+        BrickCollision[] bricks =
+            FindObjectsByType<BrickCollision>(FindObjectsSortMode.None);
+
+        Vector3[] startPositions = new Vector3[bricks.Length];
+        Vector3[] targetPositions = new Vector3[bricks.Length];
+
+        for (int i = 0; i < bricks.Length; i++)
         {
-            brick.transform.position += Vector3.down * brickMoveDownDistance;
+            startPositions[i] = bricks[i].transform.position;
+            targetPositions[i] = startPositions[i] + Vector3.down * brickMoveDownDistance;
         }
 
-        abilitySpawner?.MoveAllAbilitiesDown(brickMoveDownDistance);
+        Coroutine abilityMoveCoroutine = null;
+
+        if (abilitySpawner != null)
+        {
+            abilityMoveCoroutine = StartCoroutine(
+                abilitySpawner.MoveAllAbilitiesDownSmooth(
+                    brickMoveDownDistance,
+                    brickMoveDownDuration
+                )
+            );
+        }
+
+        float elapsedTime = 0f;
+
+        while (elapsedTime < brickMoveDownDuration)
+        {
+            elapsedTime += Time.deltaTime;
+
+            float movePercent = Mathf.Clamp01(elapsedTime / brickMoveDownDuration);
+
+            for (int i = 0; i < bricks.Length; i++)
+            {
+                if (bricks[i] == null)
+                {
+                    continue;
+                }
+
+                bricks[i].transform.position = Vector3.Lerp(
+                    startPositions[i],
+                    targetPositions[i],
+                    movePercent
+                );
+            }
+
+            yield return null;
+        }
+
+        for (int i = 0; i < bricks.Length; i++)
+        {
+            if (bricks[i] == null)
+            {
+                continue;
+            }
+
+            bricks[i].transform.position = targetPositions[i];
+        }
+
+        if (abilityMoveCoroutine != null)
+        {
+            yield return abilityMoveCoroutine;
+        }
+
+        isMovingObjectsDown = false;
 
         CheckForGameOver();
     }
