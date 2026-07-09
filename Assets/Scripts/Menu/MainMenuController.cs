@@ -68,7 +68,7 @@ public class MainMenuController : MonoBehaviour
         {
             if (LevelManager.Instance != null)
             {
-                LevelManager.Instance.SaveCurrentBallAttackStrength();
+                LevelManager.Instance.SaveLevelStartBallAttackStrength();
             }
 
             if (saveGameBeforeChangingScene &&

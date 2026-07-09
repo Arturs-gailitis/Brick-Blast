@@ -546,4 +546,10 @@ public class PlayerBallTrajectory : MonoBehaviour
 
         GameSaveManager.SaveBallAttackStrength(AttackStrength);
     }
+
+    public void SetAttackStrength(int newAttackStrength)
+    {
+        attackStrength = Mathf.Max(1, newAttackStrength);
+        AttackStrengthChanged?.Invoke(attackStrength);
+    }
 }

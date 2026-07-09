@@ -30,6 +30,7 @@ public class LevelManager : MonoBehaviour
     private bool isChangingLevel;
     private bool waitingForNextLevel;
     private bool isGameOver;
+    private int attackStrengthAtLevelStart = 1;
 
     private LevelCompleteUI levelCompleteUI;
     private GameOverUI gameOverUI;
@@ -154,6 +155,8 @@ public class LevelManager : MonoBehaviour
             return;
         }
 
+        SaveCurrentAttackAsNextLevelStartAttack();
+
         GameSaveManager.ClearSavedGame();
 
         int nextLevel = CurrentLevel + 1;
@@ -254,6 +257,8 @@ public class LevelManager : MonoBehaviour
 
         CurrentLevel = savedGame.level;
 
+        RememberLevelStartAttackStrength();
+
         if (abilitySpawner != null)
         {
             if (savedGame.abilitiesWereSaved)
@@ -297,6 +302,7 @@ public class LevelManager : MonoBehaviour
         if (ball != null)
         {
             ball.RestoreSavedState(savedGame.ball);
+            ApplyLevelStartAttackStrengthToBall();
         }
 
         CheckForGameOver();
@@ -310,6 +316,8 @@ public class LevelManager : MonoBehaviour
         }
 
         GameSaveManager.ClearSavedGame();
+
+        RememberLevelStartAttackStrength();
 
         CurrentLevel = level;
 
@@ -332,6 +340,8 @@ public class LevelManager : MonoBehaviour
         {
             gameOverUI.Hide();
         }
+
+        ApplyLevelStartAttackStrengthToBall();
 
         CheckForGameOver();
     }
@@ -413,6 +423,66 @@ public class LevelManager : MonoBehaviour
         if (gameOverUI != null)
         {
             gameOverUI.Show(CurrentLevel);
+        }
+    }
+
+    private void RememberLevelStartAttackStrength()
+    {
+        attackStrengthAtLevelStart = GameSaveManager.LoadBallAttackStrength();
+    }
+
+    private void ApplyLevelStartAttackStrengthToBall()
+    {
+        PlayerBallTrajectory ball = GetPlayerBall();
+
+        if (ball == null)
+        {
+            return;
+        }
+
+        ball.SetAttackStrength(attackStrengthAtLevelStart);
+    }
+
+    private void SaveCurrentAttackAsNextLevelStartAttack()
+    {
+        PlayerBallTrajectory ball = GetPlayerBall();
+
+        if (ball == null)
+        {
+            return;
+        }
+
+        attackStrengthAtLevelStart = Mathf.Max(1, ball.AttackStrength);
+        GameSaveManager.SaveBallAttackStrength(attackStrengthAtLevelStart);
+    }
+
+    public void SaveLevelStartBallAttackStrength()
+    {
+        GameSaveManager.SaveBallAttackStrength(attackStrengthAtLevelStart);
+    }
+
+    private void SaveGameWhenProgramCloses()
+    {
+        if (isGameOver || isChangingLevel)
+        {
+            return;
+        }
+
+        SaveCurrentGame();
+
+        GameSaveManager.SaveBallAttackStrength(attackStrengthAtLevelStart);
+    }
+
+    private void OnApplicationQuit()
+    {
+        SaveGameWhenProgramCloses();
+    }
+
+    private void OnApplicationPause(bool pauseStatus)
+    {
+        if (pauseStatus)
+        {
+            SaveGameWhenProgramCloses();
         }
     }
 
