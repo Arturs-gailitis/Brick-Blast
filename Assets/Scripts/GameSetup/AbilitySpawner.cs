@@ -9,28 +9,33 @@ public class AbilitySpawner : MonoBehaviour
     [SerializeField] private GameObject laserPrefab;
     [SerializeField] private GameObject powerPrefab;
     [SerializeField] private GameObject directionPrefab;
-    [SerializeField] private GameObject cellReferencePrefab;
     [SerializeField] private AbilityConfigReader abilityConfigReader;
+    [SerializeField] private GameObject brickPrefab;
 
     [Header("Walls")]
     [SerializeField] private Transform[] walls;
 
     [Header("Grid settings")]
     [SerializeField] [Min(1)] private int gridColumns = 7;
-    [SerializeField] private float horizontalSpacing = 0.08f;
-    [SerializeField] private float verticalSpacing = 0.08f;
+    [SerializeField] private float horizontalSpacing;
+    [SerializeField] private float verticalSpacing;
     [SerializeField] private float distanceFromTopWall = 0.5f;
     [SerializeField] private float horizontalOffset;
+    [SerializeField] [Min(0f)] private float distanceFromSideWalls = 0.08f;
+    [SerializeField] private bool fitGridBetweenWalls = true;
 
     [Header("Ability size")]
     [SerializeField] private bool resizeAbilityToCellSize = true;
-    [SerializeField] [Range(0.1f, 1f)] private float abilitySizeMultiplier = 0.9f;
+    [SerializeField] [Range(0.1f, 1f)] private float laserSizeMultiplier = 0.9f;
+    [SerializeField] [Range(0.1f, 1f)] private float powerSizeMultiplier = 0.7f;
+    [SerializeField] [Range(0.1f, 1f)] private float directionSizeMultiplier = 0.7f;
 
     private Transform abilitiesParent;
 
     private List<AbilityConfig> currentLevelAbilities = new List<AbilityConfig>();
     private int nextRowToSpawn;
     private int maxRowInLevel = -1;
+    private int selectedLevel = 1;
 
     private float cachedFirstCellX;
     private float cachedFirstCellY;
@@ -53,6 +58,7 @@ public class AbilitySpawner : MonoBehaviour
     {
         ClearAbilities();
 
+        selectedLevel = level;
         nextRowToSpawn = 0;
         maxRowInLevel = -1;
         hasCachedGrid = false;
@@ -62,7 +68,8 @@ public class AbilitySpawner : MonoBehaviour
             return 0;
         }
 
-        currentLevelAbilities = abilityConfigReader.GetAbilitiesForLevel(level);
+        currentLevelAbilities =
+            abilityConfigReader.GetAbilitiesForLevel(level);
 
         if (currentLevelAbilities.Count == 0)
         {
@@ -78,9 +85,12 @@ public class AbilitySpawner : MonoBehaviour
 
         int spawnedAbilities = 0;
 
-        for (int i = 0; i < visibleRowsAtStart; i++)
+        for (int visualRow = 0; visualRow < visibleRowsAtStart; visualRow++)
         {
-            spawnedAbilities += SpawnCurrentNextRow(nextRowToSpawn, level);
+            spawnedAbilities += SpawnCurrentNextRow(
+                visualRow,
+                selectedLevel
+            );
         }
 
         return spawnedAbilities;
@@ -257,14 +267,15 @@ public class AbilitySpawner : MonoBehaviour
         return topWall != null;
     }
 
-    private void ResizeAbilityToCellSize(GameObject abilityObject, float cellWidth, float cellHeight)
+    private void ResizeAbilityToCellSize(GameObject abilityObject, string abilityType, float cellWidth, float cellHeight)
     {
         if (abilityObject == null)
         {
             return;
         }
 
-        SpriteRenderer spriteRenderer = abilityObject.GetComponent<SpriteRenderer>();
+        SpriteRenderer spriteRenderer =
+            abilityObject.GetComponent<SpriteRenderer>();
 
         if (spriteRenderer == null || spriteRenderer.sprite == null)
         {
@@ -278,13 +289,39 @@ public class AbilitySpawner : MonoBehaviour
             return;
         }
 
-        float targetSize = Mathf.Min(cellWidth, cellHeight) * abilitySizeMultiplier;
-        float spriteLargestSide = Mathf.Max(spriteSize.x, spriteSize.y);
+        float sizeMultiplier = laserSizeMultiplier;
+
+        if (string.Equals(
+            abilityType,
+            "power",
+            StringComparison.OrdinalIgnoreCase
+        ))
+        {
+            sizeMultiplier = powerSizeMultiplier;
+        }
+        else if (string.Equals(
+            abilityType,
+            "direction",
+            StringComparison.OrdinalIgnoreCase
+        ))
+        {
+            sizeMultiplier = directionSizeMultiplier;
+        }
+
+        float targetSize =
+            Mathf.Min(cellWidth, cellHeight) *
+            sizeMultiplier;
+
+        float spriteLargestSide =
+            Mathf.Max(spriteSize.x, spriteSize.y);
+
         float scale = targetSize / spriteLargestSide;
 
-        abilityObject.transform.localScale = new Vector3(scale, scale, 1f);
+        abilityObject.transform.localScale =
+            new Vector3(scale, scale, 1f);
 
-        CircleCollider2D circleCollider = abilityObject.GetComponent<CircleCollider2D>();
+        CircleCollider2D circleCollider =
+            abilityObject.GetComponent<CircleCollider2D>();
 
         if (circleCollider != null)
         {
@@ -388,7 +425,12 @@ public class AbilitySpawner : MonoBehaviour
 
             if (resizeAbilityToCellSize && cellWidth > 0f && cellHeight > 0f)
             {
-                ResizeAbilityToCellSize(newAbility, cellWidth, cellHeight);
+                ResizeAbilityToCellSize(
+                    newAbility,
+                    savedAbility.abilityType,
+                    cellWidth,
+                    cellHeight
+                );
             }
 
             newAbility.name = "Saved_" + savedAbility.abilityType + "_" + spawnedAbilities;
@@ -417,44 +459,35 @@ public class AbilitySpawner : MonoBehaviour
         cellWidth = 0f;
         cellHeight = 0f;
 
-        GameObject referencePrefab = cellReferencePrefab;
-
-        if (referencePrefab == null)
-        {
-            referencePrefab = laserPrefab;
-        }
-
-        if (referencePrefab == null)
-        {
-            referencePrefab = powerPrefab;
-        }
-
-        if (referencePrefab == null)
+        if (brickPrefab == null)
         {
             return false;
         }
 
-        BoxCollider2D cellCollider = referencePrefab.GetComponent<BoxCollider2D>();
+        SpriteRenderer brickRenderer =
+            brickPrefab.GetComponent<SpriteRenderer>();
 
-        if (cellCollider == null)
+        if (brickRenderer == null || brickRenderer.sprite == null)
         {
             return false;
         }
+
+        Vector2 spriteSize = brickRenderer.sprite.bounds.size;
 
         cellWidth =
-            cellCollider.size.x *
-            Mathf.Abs(referencePrefab.transform.localScale.x);
+            spriteSize.x *
+            Mathf.Abs(brickPrefab.transform.localScale.x);
 
         cellHeight =
-            cellCollider.size.y *
-            Mathf.Abs(referencePrefab.transform.localScale.y);
+            spriteSize.y *
+            Mathf.Abs(brickPrefab.transform.localScale.y);
 
         return cellWidth > 0f && cellHeight > 0f;
     }
 
     public int SpawnNextRowAtTop()
     {
-        return SpawnCurrentNextRow(0, 0);
+        return SpawnCurrentNextRow(0, selectedLevel);
     }
 
     private int SpawnCurrentNextRow(int visualRow, int levelForName)
@@ -492,27 +525,47 @@ public class AbilitySpawner : MonoBehaviour
                 continue;
             }
 
-            GameObject selectedPrefab = GetPrefabForAbility(abilityConfig.abilityType);
+            GameObject selectedPrefab =
+                GetPrefabForAbility(abilityConfig.abilityType);
 
             if (selectedPrefab == null)
             {
                 continue;
             }
 
-            float x = cachedFirstCellX + abilityConfig.column * (cachedCellWidth + horizontalSpacing);
-            float y = cachedFirstCellY - visualRow * (cachedCellHeight + verticalSpacing);
+            float x =
+                cachedFirstCellX +
+                abilityConfig.column *
+                (cachedCellWidth + horizontalSpacing);
+
+            float y =
+                cachedFirstCellY -
+                visualRow *
+                (cachedCellHeight + verticalSpacing);
+
+            Vector3 gridPosition = new Vector3(x, y, 0f);
 
             GameObject newAbility = Instantiate(
                 selectedPrefab,
-                new Vector3(x, y, 0f),
+                gridPosition,
                 Quaternion.identity,
                 abilitiesParent
             );
 
             if (resizeAbilityToCellSize)
             {
-                ResizeAbilityToCellSize(newAbility, cachedCellWidth, cachedCellHeight);
+                ResizeAbilityToCellSize(
+                    newAbility,
+                    abilityConfig.abilityType,
+                    cachedCellWidth,
+                    cachedCellHeight
+                );
             }
+
+            CenterAbilityOnGridPosition(
+                newAbility,
+                gridPosition
+            );
 
             newAbility.name =
                 abilityConfig.abilityType + "_" +
@@ -520,7 +573,10 @@ public class AbilitySpawner : MonoBehaviour
                 abilityConfig.row + "_" +
                 abilityConfig.column;
 
-            ConfigureSpawnedAbility(newAbility, abilityConfig);
+            ConfigureSpawnedAbility(
+                newAbility,
+                abilityConfig
+            );
 
             spawnedAbilities++;
         }
@@ -545,7 +601,23 @@ public class AbilitySpawner : MonoBehaviour
             (gridColumns - 1) * horizontalSpacing;
 
         float availableWidth =
-            rightWall.bounds.min.x - leftWall.bounds.max.x;
+            rightWall.bounds.min.x -
+            leftWall.bounds.max.x -
+            distanceFromSideWalls * 2f;
+
+        if (availableWidth <= 0f)
+        {
+            return false;
+        }
+
+        if (fitGridBetweenWalls)
+        {
+            cachedCellWidth =
+                (
+                    availableWidth -
+                    (gridColumns - 1) * horizontalSpacing
+                ) / gridColumns;
+        }
 
         if (gridWidth > availableWidth)
         {
@@ -553,8 +625,8 @@ public class AbilitySpawner : MonoBehaviour
         }
 
         cachedFirstCellX =
-            (leftWall.bounds.max.x + rightWall.bounds.min.x) / 2f -
-            gridWidth / 2f +
+            leftWall.bounds.max.x +
+            distanceFromSideWalls +
             cachedCellWidth / 2f +
             horizontalOffset;
 
@@ -566,6 +638,27 @@ public class AbilitySpawner : MonoBehaviour
         hasCachedGrid = true;
 
         return true;
+    }
+
+    private void CenterAbilityOnGridPosition(GameObject abilityObject, Vector3 gridPosition)
+    {
+        if (abilityObject == null)
+        {
+            return;
+        }
+
+        SpriteRenderer spriteRenderer =
+            abilityObject.GetComponent<SpriteRenderer>();
+
+        if (spriteRenderer == null)
+        {
+            return;
+        }
+
+        Vector3 spriteCenter = spriteRenderer.bounds.center;
+        Vector3 centerOffset = gridPosition - spriteCenter;
+
+        abilityObject.transform.position += centerOffset;
     }
 
     private int GetMaxRow(List<AbilityConfig> abilities)

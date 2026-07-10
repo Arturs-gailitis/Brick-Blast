@@ -12,21 +12,23 @@ public class BrickSpawner : MonoBehaviour
 
     [Header("Spacing")]
     [SerializeField] [Min(1)] private int gridColumns = 7;
-    [SerializeField] private float horizontalSpacing = 0.08f;
-    [SerializeField] private float verticalSpacing = 0.08f;
+    [SerializeField] private float horizontalSpacing;
+    [SerializeField] private float verticalSpacing;
     [SerializeField] private float distanceFromTopWall = 0.5f;
-    [SerializeField] private float horizontalOffset = 0.25f;
+    [SerializeField] private float horizontalOffset;
+    [SerializeField] [Min(0f)] private float distanceFromSideWalls = 0.08f;
+    [SerializeField] private bool fitBricksBetweenWalls = true;
 
     private List<BrickConfig> currentLevelBricks = new List<BrickConfig>();
     private int nextRowToSpawn;
     private int maxRowInLevel = -1;
     private int selectedLevel = 1;
-
     private float cachedFirstBrickX;
     private float cachedFirstBrickY;
     private float cachedBrickWidth;
     private float cachedBrickHeight;
     private bool hasCachedGrid;
+    private float brickWidthScaleMultiplier = 1f;
 
     private Transform bricksParent;
 
@@ -40,11 +42,6 @@ public class BrickSpawner : MonoBehaviour
     {
         return brickConfigReader != null && brickConfigReader.GetBricksForLevel(level).Count > 0;
     }
-
-    public int SpawnLevel(int level)
-    {
-        return SpawnLevel(level, 3);
-        }
 
     public int SpawnLevel(int level, int visibleRowsAtStart)
     {
@@ -239,6 +236,12 @@ public class BrickSpawner : MonoBehaviour
                 bricksParent
             );
 
+            Vector3 brickScale = newBrick.transform.localScale;
+
+            brickScale.x *= brickWidthScaleMultiplier;
+
+            newBrick.transform.localScale = brickScale;
+
             BrickCollision brickCollision = newBrick.GetComponent<BrickCollision>();
 
             if (brickCollision == null)
@@ -268,27 +271,58 @@ public class BrickSpawner : MonoBehaviour
             return false;
         }
 
-        BoxCollider2D brickCollider = brickPrefab.GetComponent<BoxCollider2D>();
+        SpriteRenderer brickRenderer = brickPrefab.GetComponent<SpriteRenderer>();
 
-        if (brickCollider == null)
+        if (brickRenderer == null || brickRenderer.sprite == null)
         {
             return false;
         }
 
-        cachedBrickWidth =
-            brickCollider.size.x *
+        Vector2 spriteSize = brickRenderer.sprite.bounds.size;
+
+        float originalBrickWidth =
+            spriteSize.x *
             Mathf.Abs(brickPrefab.transform.localScale.x);
 
         cachedBrickHeight =
-            brickCollider.size.y *
+            spriteSize.y *
             Mathf.Abs(brickPrefab.transform.localScale.y);
+
+        float availableWidth =
+            rightWall.bounds.min.x -
+            leftWall.bounds.max.x -
+            distanceFromSideWalls * 2f;
+
+        if (availableWidth <= 0f)
+        {
+            return false;
+        }
+
+        if (fitBricksBetweenWalls)
+        {
+            cachedBrickWidth =
+                (
+                    availableWidth -
+                    (gridColumns - 1) * horizontalSpacing
+                ) / gridColumns;
+
+            if (cachedBrickWidth <= 0f)
+            {
+                return false;
+            }
+
+            brickWidthScaleMultiplier =
+                cachedBrickWidth / originalBrickWidth;
+        }
+        else
+        {
+            cachedBrickWidth = originalBrickWidth;
+            brickWidthScaleMultiplier = 1f;
+        }
 
         float gridWidth =
             gridColumns * cachedBrickWidth +
             (gridColumns - 1) * horizontalSpacing;
-
-        float availableWidth =
-            rightWall.bounds.min.x - leftWall.bounds.max.x;
 
         if (gridWidth > availableWidth)
         {
@@ -296,8 +330,8 @@ public class BrickSpawner : MonoBehaviour
         }
 
         cachedFirstBrickX =
-            (leftWall.bounds.max.x + rightWall.bounds.min.x) / 2f -
-            gridWidth / 2f +
+            leftWall.bounds.max.x +
+            distanceFromSideWalls +
             cachedBrickWidth / 2f +
             horizontalOffset;
 
@@ -309,6 +343,16 @@ public class BrickSpawner : MonoBehaviour
         hasCachedGrid = true;
 
         return true;
+    }
+
+    public float GetRowStep()
+    {
+        if (!hasCachedGrid)
+        {
+            return 0f;
+        }
+
+        return cachedBrickHeight + verticalSpacing;
     }
 
     private int GetMaxRow(List<BrickConfig> bricks)

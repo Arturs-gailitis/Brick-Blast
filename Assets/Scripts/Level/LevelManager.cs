@@ -18,15 +18,14 @@ public class LevelManager : MonoBehaviour
 
     [Header("Brick movement after shot")]
     [SerializeField] [Min(0f)] private float brickMoveDownDistance;
-    [SerializeField] [Min(0.01f)] private float brickMoveDownDuration = 0.25f;
+    [SerializeField] [Min(0.01f)] private float brickMoveDownDuration;
 
     [Header("Rows loading")]
     [SerializeField] [Min(1)] private int visibleRowsAtLevelStart = 3;
-    [SerializeField] [Min(1)] private int movesBeforeNewRow = 2;
+    [SerializeField] [Min(1)] private int movesBeforeNewRow;
 
     [Header("Game over settings")]
-    [SerializeField] [Min(0f)]
-    private float gameOverDistanceFromBottomWall = 0.4f;
+    [SerializeField] [Min(0f)] private float gameOverDistanceFromBottomWall;
 
     public int CurrentLevel { get; private set; }
     public bool IsGameOver => isGameOver;
@@ -134,18 +133,6 @@ public class LevelManager : MonoBehaviour
 
         GameSaveManager.SaveGame(savedGame);
         SaveLevelProgress(CurrentLevel);
-    }
-
-    public void SaveCurrentBallAttackStrength()
-    {
-        PlayerBallTrajectory ball = GetPlayerBall();
-
-        if (ball == null)
-        {
-            return;
-        }
-
-        GameSaveManager.SaveBallAttackStrength(ball.AttackStrength);
     }
 
     public void BrickDestroyed()
@@ -401,6 +388,18 @@ public class LevelManager : MonoBehaviour
     {
         isMovingObjectsDown = true;
 
+        float moveDownDistance = brickMoveDownDistance;
+
+        if (brickSpawner != null)
+        {
+            float rowStep = brickSpawner.GetRowStep();
+
+            if (rowStep > 0f)
+            {
+                moveDownDistance = rowStep / movesBeforeNewRow;
+            }
+        }
+
         BrickCollision[] bricks =
             FindObjectsByType<BrickCollision>(FindObjectsSortMode.None);
 
@@ -410,7 +409,10 @@ public class LevelManager : MonoBehaviour
         for (int i = 0; i < bricks.Length; i++)
         {
             startPositions[i] = bricks[i].transform.position;
-            targetPositions[i] = startPositions[i] + Vector3.down * brickMoveDownDistance;
+
+            targetPositions[i] =
+                startPositions[i] +
+                Vector3.down * moveDownDistance;
         }
 
         Coroutine abilityMoveCoroutine = null;
@@ -419,7 +421,7 @@ public class LevelManager : MonoBehaviour
         {
             abilityMoveCoroutine = StartCoroutine(
                 abilitySpawner.MoveAllAbilitiesDownSmooth(
-                    brickMoveDownDistance,
+                    moveDownDistance,
                     brickMoveDownDuration
                 )
             );
@@ -431,7 +433,8 @@ public class LevelManager : MonoBehaviour
         {
             elapsedTime += Time.deltaTime;
 
-            float movePercent = Mathf.Clamp01(elapsedTime / brickMoveDownDuration);
+            float movePercent =
+                Mathf.Clamp01(elapsedTime / brickMoveDownDuration);
 
             for (int i = 0; i < bricks.Length; i++)
             {
@@ -469,15 +472,8 @@ public class LevelManager : MonoBehaviour
 
         if (downMoveCounter >= movesBeforeNewRow)
         {
-            if (brickSpawner != null)
-            {
-                brickSpawner.SpawnNextRowAtTop();
-            }
-
-            if (abilitySpawner != null)
-            {
-                abilitySpawner.SpawnNextRowAtTop();
-            }
+            brickSpawner?.SpawnNextRowAtTop();
+            abilitySpawner?.SpawnNextRowAtTop();
 
             downMoveCounter = 0;
         }

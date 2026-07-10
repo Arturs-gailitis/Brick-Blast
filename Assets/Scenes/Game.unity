@@ -428,10 +428,12 @@ MonoBehaviour:
   - {fileID: 722885930230346285, guid: 888bfe6078e0ec74eb70c8109e1ee6b4, type: 3}
   - {fileID: 8111543394360099883, guid: 22bb953019d1d3b49b66c04f100b7258, type: 3}
   gridColumns: 7
-  horizontalSpacing: 0.08
-  verticalSpacing: 0.08
+  horizontalSpacing: -0.05
+  verticalSpacing: -0.2
   distanceFromTopWall: 0.5
   horizontalOffset: 0.25
+  distanceFromSideWalls: 0.08
+  fitBricksBetweenWalls: 1
 --- !u!114 &1138494234
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -477,9 +479,9 @@ MonoBehaviour:
     m_Bits: 64
   firstLevel: 1
   brickMoveDownDistance: 0.5
-  brickMoveDownDuration: 0.25
+  brickMoveDownDuration: 0.35
   visibleRowsAtLevelStart: 3
-  movesBeforeNewRow: 2
+  movesBeforeNewRow: 1
   gameOverDistanceFromBottomWall: 0.6
 --- !u!1 &1364226574
 GameObject:
@@ -514,18 +516,22 @@ MonoBehaviour:
   laserPrefab: {fileID: 4656815003314491021, guid: a4bf4f28491880449ad50d624af6e7a5, type: 3}
   powerPrefab: {fileID: 8401951411293255244, guid: 7e9f70f4a80daa841bd199732a55a68f, type: 3}
   directionPrefab: {fileID: 835050101104889381, guid: a391de1fbbf98ff42af103d2aa96d2c2, type: 3}
-  cellReferencePrefab: {fileID: 5845297711985745582, guid: dfcf4fde16325424ca57f3a31383abcf, type: 3}
   abilityConfigReader: {fileID: 1364226576}
+  brickPrefab: {fileID: 5845297711985745582, guid: dfcf4fde16325424ca57f3a31383abcf, type: 3}
   walls:
   - {fileID: 722885930230346285, guid: 888bfe6078e0ec74eb70c8109e1ee6b4, type: 3}
   - {fileID: 8111543394360099883, guid: 22bb953019d1d3b49b66c04f100b7258, type: 3}
   gridColumns: 7
-  horizontalSpacing: 0.08
-  verticalSpacing: 0.08
+  horizontalSpacing: -0.05
+  verticalSpacing: -0.2
   distanceFromTopWall: 0.5
   horizontalOffset: 0.25
+  distanceFromSideWalls: 0.08
+  fitGridBetweenWalls: 1
   resizeAbilityToCellSize: 1
-  abilitySizeMultiplier: 0.9
+  laserSizeMultiplier: 0.9
+  powerSizeMultiplier: 0.7
+  directionSizeMultiplier: 0.7
 --- !u!114 &1364226576
 MonoBehaviour:
   m_ObjectHideFlags: 0
