@@ -69,15 +69,26 @@ public class BrickCollision : MonoBehaviour
             return;
         }
 
-        PlayerBallTrajectory ballTrajectory =
-            collision.collider.GetComponent<PlayerBallTrajectory>();
-
         int ballDamage = 1;
 
-        if (ballTrajectory != null)
+        MultiBallProjectile projectile =
+            collision.collider.GetComponent<MultiBallProjectile>();
+
+        if (projectile != null)
         {
-            ballTrajectory.RegisterBrickHit();
-            ballDamage = ballTrajectory.AttackStrength;
+            projectile.RegisterBrickHit();
+            ballDamage = projectile.AttackStrength;
+        }
+        else
+        {
+            PlayerBallTrajectory mainBall =
+                collision.collider.GetComponent<PlayerBallTrajectory>();
+
+            if (mainBall != null)
+            {
+                mainBall.RegisterBrickHit();
+                ballDamage = mainBall.AttackStrength;
+            }
         }
 
         TakeBallDamage(ballDamage);

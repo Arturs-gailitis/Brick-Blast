@@ -20,7 +20,10 @@ public class LaserAbility : MonoBehaviour
     public float DurationSeconds { get; private set; }
     public int Aim { get; private set; } = 1;
 
-    private bool hasBeenUsed;
+    private bool hasBeenUsedByMainBall;
+    private bool isWaitingForMultiBallShotToEnd;
+
+    private MultiBallShooter activeMultiBallShooter;
 
     private void Awake()
     {
@@ -37,7 +40,12 @@ public class LaserAbility : MonoBehaviour
 
         Value = Mathf.Max(1, abilityConfig.value);
         DurationSeconds = Mathf.Max(0f, abilityConfig.durationSeconds);
+
         Aim = abilityConfig.aim;
+
+        hasBeenUsedByMainBall = false;
+        isWaitingForMultiBallShotToEnd = false;
+        activeMultiBallShooter = null;
 
         FindPreviewTextIfNeeded();
         UpdateAimPreview();
@@ -45,46 +53,141 @@ public class LaserAbility : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (hasBeenUsed || !other.CompareTag("Player"))
+        MultiBallProjectile projectile = other.GetComponentInParent<MultiBallProjectile>();
+
+        if (projectile != null)
         {
+            HandleMultiBallProjectile(projectile);
             return;
         }
 
-        PlayerBallTrajectory ballTrajectory = other.GetComponent<PlayerBallTrajectory>();
+        PlayerBallTrajectory mainBall = other.GetComponentInParent<PlayerBallTrajectory>();
 
-        if (ballTrajectory != null)
+        if (mainBall != null)
         {
-            ballTrajectory.RegisterBrickHit();
+            HandleMainBall(mainBall);
+        }
+    }
+
+    private void HandleMultiBallProjectile(MultiBallProjectile projectile)
+    {
+
+        projectile.RegisterBrickHit();
+
+        PlayerBallTrajectory ownerBall = projectile.OwnerBall;
+
+        if (ownerBall != null)
+        {
+            MultiBallShooter shooter =
+                ownerBall.GetComponent<MultiBallShooter>();
+
+            if (shooter != null)
+            {
+                RegisterMultiBallShooter(shooter);
+            }
         }
 
         FireLaser();
     }
 
+    private void HandleMainBall(
+        PlayerBallTrajectory mainBall)
+    {
+        if (hasBeenUsedByMainBall)
+        {
+            return;
+        }
+
+        MultiBallShooter shooter =
+            mainBall.GetComponent<MultiBallShooter>();
+
+        if (shooter != null && shooter.ShotIsActive)
+        {
+            return;
+        }
+
+        hasBeenUsedByMainBall = true;
+
+        mainBall.RegisterBrickHit();
+
+        FireLaser();
+        DestroyAbility();
+    }
+
+    private void RegisterMultiBallShooter(
+        MultiBallShooter shooter)
+    {
+        if (activeMultiBallShooter == shooter)
+        {
+            return;
+        }
+
+        UnregisterMultiBallShooter();
+
+        activeMultiBallShooter = shooter;
+        isWaitingForMultiBallShotToEnd = true;
+
+        activeMultiBallShooter.ShotFinished +=
+            HandleMultiBallShotFinished;
+    }
+
+    private void HandleMultiBallShotFinished()
+    {
+
+        isWaitingForMultiBallShotToEnd = false;
+
+        UnregisterMultiBallShooter();
+        DestroyAbility();
+    }
+
+    private void UnregisterMultiBallShooter()
+    {
+        if (activeMultiBallShooter == null)
+        {
+            return;
+        }
+
+        activeMultiBallShooter.ShotFinished -=
+            HandleMultiBallShotFinished;
+
+        activeMultiBallShooter = null;
+    }
+
     private void FireLaser()
     {
-        hasBeenUsed = true;
+        bool shootHorizontal =
+            Aim == 1 || Aim == 3;
 
-        bool shootHorizontal = Aim == 1 || Aim == 3;
-        bool shootVertical = Aim == 2 || Aim == 3;
+        bool shootVertical =
+            Aim == 2 || Aim == 3;
 
         if (!shootHorizontal && !shootVertical)
         {
             shootHorizontal = true;
         }
 
-        HideAimPreview();
+        DamageBricks(
+            shootHorizontal,
+            shootVertical
+        );
 
-        DamageBricks(shootHorizontal, shootVertical);
-        ShowLaserBeam(shootHorizontal, shootVertical);
-        HideAbilityObject();
+        ShowLaserBeam(
+            shootHorizontal,
+            shootVertical
+        );
     }
 
-    private void DamageBricks(bool shootHorizontal, bool shootVertical)
+    private void DamageBricks(
+        bool shootHorizontal,
+        bool shootVertical)
     {
-        Vector2 laserPosition = transform.position;
+        Vector2 laserPosition =
+            transform.position;
 
         BrickCollision[] bricks =
-            FindObjectsByType<BrickCollision>(FindObjectsSortMode.None);
+            FindObjectsByType<BrickCollision>(
+                FindObjectsSortMode.None
+            );
 
         foreach (BrickCollision brick in bricks)
         {
@@ -93,15 +196,22 @@ public class LaserAbility : MonoBehaviour
                 continue;
             }
 
-            Vector2 brickPosition = brick.transform.position;
+            Vector2 brickPosition =
+                brick.transform.position;
 
             bool isInSameRow =
                 shootHorizontal &&
-                Mathf.Abs(brickPosition.y - laserPosition.y) <= rowColumnTolerance;
+                Mathf.Abs(
+                    brickPosition.y -
+                    laserPosition.y
+                ) <= rowColumnTolerance;
 
             bool isInSameColumn =
                 shootVertical &&
-                Mathf.Abs(brickPosition.x - laserPosition.x) <= rowColumnTolerance;
+                Mathf.Abs(
+                    brickPosition.x -
+                    laserPosition.x
+                ) <= rowColumnTolerance;
 
             if (isInSameRow || isInSameColumn)
             {
@@ -110,38 +220,58 @@ public class LaserAbility : MonoBehaviour
         }
     }
 
-    private void ShowLaserBeam(bool shootHorizontal, bool shootVertical)
+    private void ShowLaserBeam(
+        bool shootHorizontal,
+        bool shootVertical)
     {
-        Vector2 laserPosition = transform.position;
+        Vector2 laserPosition =
+            transform.position;
 
         if (shootHorizontal)
         {
             CreateBeam(
-                laserPosition + Vector2.left * beamDistance,
-                laserPosition + Vector2.right * beamDistance
+                laserPosition +
+                Vector2.left * beamDistance,
+
+                laserPosition +
+                Vector2.right * beamDistance
             );
         }
 
         if (shootVertical)
         {
             CreateBeam(
-                laserPosition + Vector2.down * beamDistance,
-                laserPosition + Vector2.up * beamDistance
+                laserPosition +
+                Vector2.down * beamDistance,
+
+                laserPosition +
+                Vector2.up * beamDistance
             );
         }
     }
 
-    private void CreateBeam(Vector2 startPosition, Vector2 endPosition)
+    private void CreateBeam(
+        Vector2 startPosition,
+        Vector2 endPosition)
     {
-        GameObject beamObject = new GameObject("LaserBeam");
+        GameObject beamObject =
+            new GameObject("LaserBeam");
 
-        LineRenderer lineRenderer = beamObject.AddComponent<LineRenderer>();
+        LineRenderer lineRenderer =
+            beamObject.AddComponent<LineRenderer>();
 
         lineRenderer.useWorldSpace = true;
         lineRenderer.positionCount = 2;
 
-        lineRenderer.SetPosition(0, startPosition);
-        lineRenderer.SetPosition(1, endPosition);
+        lineRenderer.SetPosition(
+            0,
+            startPosition
+        );
+
+        lineRenderer.SetPosition(
+            1,
+            endPosition
+        );
 
         lineRenderer.startWidth = beamWidth;
         lineRenderer.endWidth = beamWidth;
@@ -154,41 +284,52 @@ public class LaserAbility : MonoBehaviour
         lineRenderer.startColor = Color.cyan;
         lineRenderer.endColor = Color.cyan;
 
-        Shader shader = Shader.Find("Sprites/Default");
+        Shader shader =
+            Shader.Find("Sprites/Default");
 
         if (shader != null)
         {
-            lineRenderer.material = new Material(shader);
+            lineRenderer.material =
+                new Material(shader);
         }
 
-        float visibleSeconds = DurationSeconds > 0f
-            ? DurationSeconds
-            : defaultBeamVisibleSeconds;
+        float visibleSeconds =
+            DurationSeconds > 0f
+                ? DurationSeconds
+                : defaultBeamVisibleSeconds;
 
-        Destroy(beamObject, visibleSeconds);
+        Destroy(
+            beamObject,
+            visibleSeconds
+        );
     }
 
-    private void HideAbilityObject()
+    private void DestroyAbility()
     {
-        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
+        UnregisterMultiBallShooter();
+
+        SpriteRenderer spriteRenderer =
+            GetComponent<SpriteRenderer>();
 
         if (spriteRenderer != null)
         {
             spriteRenderer.enabled = false;
         }
 
-        Collider2D abilityCollider = GetComponent<Collider2D>();
+        Collider2D abilityCollider =
+            GetComponent<Collider2D>();
 
         if (abilityCollider != null)
         {
             abilityCollider.enabled = false;
         }
 
-        float destroyDelay = DurationSeconds > 0f
-            ? DurationSeconds
-            : defaultBeamVisibleSeconds;
+        if (aimPreviewText != null)
+        {
+            aimPreviewText.gameObject.SetActive(false);
+        }
 
-        Destroy(gameObject, destroyDelay);
+        Destroy(gameObject);
     }
 
     private void FindPreviewTextIfNeeded()
@@ -198,11 +339,13 @@ public class LaserAbility : MonoBehaviour
             return;
         }
 
-        Transform textChild = transform.Find("AimPreviewText");
+        Transform textChild =
+            transform.Find("AimPreviewText");
 
         if (textChild != null)
         {
-            aimPreviewText = textChild.GetComponent<TMP_Text>();
+            aimPreviewText =
+                textChild.GetComponent<TMP_Text>();
         }
     }
 
@@ -244,19 +387,36 @@ public class LaserAbility : MonoBehaviour
             return;
         }
 
-        aimPreviewText.fontSize = previewFontSize;
-        aimPreviewText.alignment = TextAlignmentOptions.Center;
+        aimPreviewText.fontSize =
+            previewFontSize;
 
-        RectTransform rectTransform = aimPreviewText.GetComponent<RectTransform>();
+        aimPreviewText.alignment =
+            TextAlignmentOptions.Center;
+
+        RectTransform rectTransform =
+            aimPreviewText.GetComponent<RectTransform>();
 
         if (rectTransform != null)
         {
-            rectTransform.anchoredPosition3D = new Vector3(0f, 0f, -0.05f);
-            rectTransform.sizeDelta = new Vector2(20f, 20f);
+            rectTransform.anchoredPosition3D =
+                new Vector3(
+                    0f,
+                    0f,
+                    -0.05f
+                );
+
+            rectTransform.sizeDelta =
+                new Vector2(
+                    20f,
+                    20f
+                );
         }
 
-        float parentScaleX = Mathf.Abs(transform.lossyScale.x);
-        float parentScaleY = Mathf.Abs(transform.lossyScale.y);
+        float parentScaleX =
+            Mathf.Abs(transform.lossyScale.x);
+
+        float parentScaleY =
+            Mathf.Abs(transform.lossyScale.y);
 
         if (parentScaleX <= 0f)
         {
@@ -268,24 +428,23 @@ public class LaserAbility : MonoBehaviour
             parentScaleY = 1f;
         }
 
-        aimPreviewText.transform.localScale = new Vector3(
-            previewTextWorldScale / parentScaleX,
-            previewTextWorldScale / parentScaleY,
-            1f
-        );
-    }
+        aimPreviewText.transform.localScale =
+            new Vector3(
+                previewTextWorldScale /
+                parentScaleX,
 
-    private void HideAimPreview()
-    {
-        if (aimPreviewText != null)
-        {
-            aimPreviewText.gameObject.SetActive(false);
-        }
+                previewTextWorldScale /
+                parentScaleY,
+
+                1f
+            );
     }
 
     public SavedAbilityData CreateSaveData()
     {
-        if (hasBeenUsed)
+
+        if (hasBeenUsedByMainBall ||
+            isWaitingForMultiBallShotToEnd)
         {
             return null;
         }
@@ -299,5 +458,10 @@ public class LaserAbility : MonoBehaviour
             durationSeconds = DurationSeconds,
             aim = Aim
         };
+    }
+
+    private void OnDestroy()
+    {
+        UnregisterMultiBallShooter();
     }
 }

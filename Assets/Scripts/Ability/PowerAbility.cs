@@ -37,20 +37,37 @@ public class PowerAbility : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (hasBeenUsed || !other.CompareTag("Player"))
+        if (hasBeenUsed)
+        {
+            return;
+        }
+
+        MultiBallProjectile projectile =
+            other.GetComponentInParent<MultiBallProjectile>();
+
+        if (projectile != null)
+        {
+            hasBeenUsed = true;
+
+            projectile.RegisterBrickHit();
+            projectile.IncreaseAttackStrength(Value);
+
+            HideAbilityObject();
+            return;
+        }
+
+        PlayerBallTrajectory ballTrajectory =
+            other.GetComponentInParent<PlayerBallTrajectory>();
+
+        if (ballTrajectory == null)
         {
             return;
         }
 
         hasBeenUsed = true;
 
-        PlayerBallTrajectory ballTrajectory = other.GetComponent<PlayerBallTrajectory>();
-
-        if (ballTrajectory != null)
-        {
-            ballTrajectory.RegisterBrickHit();
-            ballTrajectory.IncreaseAttackStrength(Value);
-        }
+        ballTrajectory.RegisterBrickHit();
+        ballTrajectory.IncreaseAttackStrength(Value);
 
         HideAbilityObject();
     }

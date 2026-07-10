@@ -49,8 +49,8 @@ public class PlayerBallTrajectory : MonoBehaviour
     private bool ignoreCurrentPointerUntilReleased;
     private int inputEnabledFrame;
 
-    private readonly List<RaycastResult> uiRaycastResults =
-        new List<RaycastResult>();
+    private readonly List<RaycastResult> uiRaycastResults = new List<RaycastResult>();
+    private MultiBallShooter multiBallShooter;
 
     private void Awake()
     {
@@ -72,6 +72,8 @@ public class PlayerBallTrajectory : MonoBehaviour
         attackStrength = GameSaveManager.LoadBallAttackStrength();
 
         lineRenderer.positionCount = 0;
+
+        multiBallShooter = GetComponent<MultiBallShooter>();
     }
 
     private void Update()
@@ -167,11 +169,29 @@ public class PlayerBallTrajectory : MonoBehaviour
         launchPosition = ballRigidbody.position;
         timeSinceLastBrickHit = 0f;
 
-        ballRigidbody.WakeUp();
-        ballRigidbody.linearVelocity = direction * ballSpeed;
-        ballRigidbody.angularVelocity = 0f;
-
         HideTrajectory();
+
+        if (multiBallShooter != null)
+        {
+            bool startedMultiBallShot =
+                multiBallShooter.StartShot(
+                    direction,
+                    ballSpeed,
+                    bottomWallLayer,
+                    bottomWallGap
+                );
+
+            if (startedMultiBallShot)
+            {
+                return;
+            }
+        }
+
+        ballRigidbody.WakeUp();
+
+        ballRigidbody.linearVelocity = direction * ballSpeed;
+
+        ballRigidbody.angularVelocity = 0f;
     }
 
     private void CheckNoBrickHitTimer()
@@ -226,6 +246,9 @@ public class PlayerBallTrajectory : MonoBehaviour
 
     private void StopBallAndFinishTurn(Vector2 finalPosition,bool moveBricksDown)
     {
+
+        multiBallShooter?.CancelShot();
+        
         bool shouldMoveBricks = turnIsActive && moveBricksDown;
 
         turnIsActive = false;
@@ -551,5 +574,18 @@ public class PlayerBallTrajectory : MonoBehaviour
     {
         attackStrength = Mathf.Max(1, newAttackStrength);
         AttackStrengthChanged?.Invoke(attackStrength);
+    }
+
+    public void FinishMultiBallShot(Vector2 finalPosition)
+    {
+        if (!turnIsActive)
+        {
+            return;
+        }
+
+        StopBallAndFinishTurn(
+            finalPosition,
+            true
+        );
     }
 }
