@@ -366,4 +366,40 @@ public class BrickSpawner : MonoBehaviour
 
         return maxRow;
     }
+
+    public bool PrepareSavedLevel(int level, int nextRow)
+    {
+        selectedLevel = level;
+        nextRowToSpawn = Mathf.Max(0, nextRow);
+        maxRowInLevel = -1;
+        hasCachedGrid = false;
+
+        if (brickPrefab == null || brickConfigReader == null)
+        {
+            return false;
+        }
+
+        currentLevelBricks =
+            brickConfigReader.GetBricksForLevel(level);
+
+        if (currentLevelBricks == null ||
+            currentLevelBricks.Count == 0)
+        {
+            return false;
+        }
+
+        if (!PrepareGrid())
+        {
+            return false;
+        }
+
+        maxRowInLevel = GetMaxRow(currentLevelBricks);
+
+        return true;
+    }
+
+    public int GetNextRowToSpawn()
+    {
+        return nextRowToSpawn;
+    }
 }

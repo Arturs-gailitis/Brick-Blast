@@ -49,11 +49,6 @@ public class AbilitySpawner : MonoBehaviour
         abilitiesParent = parentObject.transform;
     }
 
-    public int SpawnLevel(int level)
-    {
-        return SpawnLevel(level, 3);
-    }
-
     public int SpawnLevel(int level, int visibleRowsAtStart)
     {
         ClearAbilities();
@@ -671,5 +666,41 @@ public class AbilitySpawner : MonoBehaviour
         }
 
         return maxRow;
+    }
+
+    public bool PrepareSavedLevel(int level, int nextRow)
+    {
+        selectedLevel = level;
+        nextRowToSpawn = Mathf.Max(0, nextRow);
+        maxRowInLevel = -1;
+        hasCachedGrid = false;
+
+        if (abilityConfigReader == null)
+        {
+            return false;
+        }
+
+        currentLevelAbilities =
+            abilityConfigReader.GetAbilitiesForLevel(level);
+
+        if (currentLevelAbilities == null ||
+            currentLevelAbilities.Count == 0)
+        {
+            return false;
+        }
+
+        if (!PrepareGrid())
+        {
+            return false;
+        }
+
+        maxRowInLevel = GetMaxRow(currentLevelAbilities);
+
+        return true;
+    }
+
+    public int GetNextRowToSpawn()
+    {
+        return nextRowToSpawn;
     }
 }

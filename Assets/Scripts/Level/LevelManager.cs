@@ -122,13 +122,26 @@ public class LevelManager : MonoBehaviour
         SavedGameData savedGame = new SavedGameData
         {
             level = CurrentLevel,
+
             score = ScoreManager.Instance != null
                 ? ScoreManager.Instance.CurrentScore
                 : 0,
+
             ball = ball.CreateSaveData(),
             bricks = savedBricks,
+
             abilitiesWereSaved = true,
-            abilities = savedAbilities
+            abilities = savedAbilities,
+
+            nextBrickRowToSpawn = brickSpawner != null
+                ? brickSpawner.GetNextRowToSpawn()
+                : visibleRowsAtLevelStart,
+
+            nextAbilityRowToSpawn = abilitySpawner != null
+                ? abilitySpawner.GetNextRowToSpawn()
+                : visibleRowsAtLevelStart,
+
+            downMoveCounter = downMoveCounter
         };
 
         GameSaveManager.SaveGame(savedGame);
@@ -283,21 +296,43 @@ public class LevelManager : MonoBehaviour
 
         CurrentLevel = savedGame.level;
 
+        downMoveCounter =
+            Mathf.Max(0, savedGame.downMoveCounter);
+
+        brickSpawner.PrepareSavedLevel(
+            CurrentLevel,
+            savedGame.nextBrickRowToSpawn
+        );
+
+        if (abilitySpawner != null)
+        {
+            abilitySpawner.PrepareSavedLevel(
+                CurrentLevel,
+                savedGame.nextAbilityRowToSpawn
+            );
+        }
+
         RememberLevelStartAttackStrength();
 
         if (abilitySpawner != null)
         {
             if (savedGame.abilitiesWereSaved)
             {
-                abilitySpawner.SpawnSavedAbilities(savedGame.abilities);
+                abilitySpawner.SpawnSavedAbilities(
+                    savedGame.abilities
+                );
             }
             else
             {
-                abilitySpawner.SpawnLevel(CurrentLevel);
+                abilitySpawner.SpawnLevel(
+                    CurrentLevel,
+                    visibleRowsAtLevelStart
+                );
             }
         }
 
-        remainingBricks = brickSpawner.SpawnSavedLevel(savedGame.bricks);
+        remainingBricks =
+            brickSpawner.SpawnSavedLevel(savedGame.bricks);
 
         if (remainingBricks == 0)
         {
@@ -315,6 +350,7 @@ public class LevelManager : MonoBehaviour
         isChangingLevel = false;
         waitingForNextLevel = false;
         isGameOver = false;
+        isMovingObjectsDown = false;
 
         SetLevelCompletePanelVisible(false);
 
@@ -388,6 +424,9 @@ public class LevelManager : MonoBehaviour
     {
         isMovingObjectsDown = true;
 
+        int safeMovesBeforeNewRow =
+            Mathf.Max(1, movesBeforeNewRow);
+
         float moveDownDistance = brickMoveDownDistance;
 
         if (brickSpawner != null)
@@ -396,7 +435,8 @@ public class LevelManager : MonoBehaviour
 
             if (rowStep > 0f)
             {
-                moveDownDistance = rowStep / movesBeforeNewRow;
+                moveDownDistance =
+                    rowStep / safeMovesBeforeNewRow;
             }
         }
 
@@ -470,7 +510,7 @@ public class LevelManager : MonoBehaviour
 
         downMoveCounter++;
 
-        if (downMoveCounter >= movesBeforeNewRow)
+        if (downMoveCounter >= safeMovesBeforeNewRow)
         {
             brickSpawner?.SpawnNextRowAtTop();
             abilitySpawner?.SpawnNextRowAtTop();
