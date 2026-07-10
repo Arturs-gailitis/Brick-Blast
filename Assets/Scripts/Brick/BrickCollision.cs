@@ -177,7 +177,9 @@ public class BrickCollision : MonoBehaviour
             return;
         }
 
-        switch (health)
+        int repeatedHealthColor = ((health - 1) % 6) + 1;
+
+        switch (repeatedHealthColor)
         {
             case 1:
                 spriteRenderer.color = new Color(1f, 0.42f, 0.42f);
@@ -199,7 +201,7 @@ public class BrickCollision : MonoBehaviour
                 spriteRenderer.color = new Color(0.2f, 0.55f, 1f);
                 break;
 
-            default:
+            case 6:
                 spriteRenderer.color = new Color(0.65f, 0.3f, 0.9f);
                 break;
         }
