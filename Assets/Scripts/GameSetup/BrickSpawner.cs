@@ -98,10 +98,18 @@ public class BrickSpawner : MonoBehaviour
             }
 
             GameObject newBrick = Instantiate(
-                brickPrefab, new Vector3(savedBrick.x, savedBrick.y, 0f), Quaternion.identity, bricksParent
+                brickPrefab,
+                new Vector3(savedBrick.x, savedBrick.y, 0f),
+                Quaternion.identity,
+                bricksParent
             );
 
-            BrickCollision brickCollision = newBrick.GetComponent<BrickCollision>();
+            Vector3 brickScale = newBrick.transform.localScale;
+            brickScale.x *= brickWidthScaleMultiplier;
+            newBrick.transform.localScale = brickScale;
+
+            BrickCollision brickCollision =
+                newBrick.GetComponent<BrickCollision>();
 
             if (brickCollision == null)
             {
@@ -112,6 +120,7 @@ public class BrickSpawner : MonoBehaviour
             newBrick.name = "SavedBrick_" + spawnedBricks;
 
             brickCollision.ConfigureSaved(savedBrick);
+
             spawnedBricks++;
         }
 
