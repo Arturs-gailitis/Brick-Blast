@@ -173,13 +173,8 @@ public class PlayerBallTrajectory : MonoBehaviour
 
         if (multiBallShooter != null)
         {
-            bool startedMultiBallShot =
-                multiBallShooter.StartShot(
-                    direction,
-                    ballSpeed,
-                    bottomWallLayer,
-                    bottomWallGap
-                );
+            bool startedMultiBallShot = multiBallShooter.StartShot(direction, ballSpeed, bottomWallLayer, 
+                bottomWallGap);
 
             if (startedMultiBallShot)
             {
@@ -313,11 +308,7 @@ public class PlayerBallTrajectory : MonoBehaviour
 
         for (int i = 0; i < maxBounces; i++)
         {
-            RaycastHit2D hit = Physics2D.CircleCast(
-                currentPosition,
-                ballRadius,
-                currentDirection,
-                trajectoryDistance,
+            RaycastHit2D hit = Physics2D.CircleCast(currentPosition, ballRadius, currentDirection, trajectoryDistance,
                 wallLayer
             );
 
@@ -370,14 +361,10 @@ public class PlayerBallTrajectory : MonoBehaviour
 
             screenPosition = touch.position;
 
-            isPointerHeld =
-                touch.phase == TouchPhase.Began ||
-                touch.phase == TouchPhase.Moved ||
+            isPointerHeld = touch.phase == TouchPhase.Began || touch.phase == TouchPhase.Moved ||
                 touch.phase == TouchPhase.Stationary;
 
-            wasPointerReleased =
-                touch.phase == TouchPhase.Ended ||
-                touch.phase == TouchPhase.Canceled;
+            wasPointerReleased = touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled;
         }
         else
         {
@@ -403,9 +390,7 @@ public class PlayerBallTrajectory : MonoBehaviour
             return false;
         }
 
-        if (screenPosition.x < 0 ||
-            screenPosition.x > Screen.width ||
-            screenPosition.y < 0 ||
+        if (screenPosition.x < 0 || screenPosition.x > Screen.width || screenPosition.y < 0 ||
             screenPosition.y > Screen.height)
         {
             return false;
@@ -413,8 +398,7 @@ public class PlayerBallTrajectory : MonoBehaviour
 
         float distanceToBallPlane = Mathf.Abs(mainCamera.transform.position.z - transform.position.z);
 
-        Vector3 convertedPosition =
-            mainCamera.ScreenToWorldPoint(
+        Vector3 convertedPosition = mainCamera.ScreenToWorldPoint(
                 new Vector3(screenPosition.x, screenPosition.y, distanceToBallPlane)
             );
 
@@ -471,6 +455,18 @@ public class PlayerBallTrajectory : MonoBehaviour
         inputEnabledFrame = Time.frameCount;
 
         HideTrajectory();
+    }
+
+    public void ResetBallsForRetry()
+    {
+        Vector2 resetPosition = turnIsActive ? launchPosition : ballRigidbody.position;
+
+        StopBallAndFinishTurn(resetPosition, false);
+
+        gameplayInputEnabled = false;
+        waitForPointerRelease = true;
+        ignoreCurrentPointerUntilReleased = true;
+        inputEnabledFrame = Time.frameCount;
     }
 
     public void PrepareForNextLevel()
@@ -588,9 +584,6 @@ public class PlayerBallTrajectory : MonoBehaviour
             return;
         }
 
-        StopBallAndFinishTurn(
-            finalPosition,
-            true
-        );
+        StopBallAndFinishTurn(finalPosition, true);
     }
 }

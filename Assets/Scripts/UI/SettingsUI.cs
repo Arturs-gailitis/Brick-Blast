@@ -31,11 +31,6 @@ public class SettingsUI : MonoBehaviour
         SetSettingsVisible(!settingsPanel.activeSelf);
     }
 
-    public void ShowSettings()
-    {
-        SetSettingsVisible(true);
-    }
-
     public void HideSettings()
     {
         SetSettingsVisible(false);
@@ -43,6 +38,14 @@ public class SettingsUI : MonoBehaviour
 
     private void RetryFromFirstLevel()
     {
+        PlayerBallTrajectory runtimeBall = FindFirstObjectByType<PlayerBallTrajectory>();
+
+        if (runtimeBall != null)
+        {
+            playerBall = runtimeBall;
+            playerBall.ResetBallsForRetry();
+        }
+
         if (LevelManager.Instance != null)
         {
             LevelManager.Instance.RetryFromFirstLevel();
@@ -58,7 +61,7 @@ public class SettingsUI : MonoBehaviour
             settingsPanel.SetActive(isVisible);
         }
 
-        if (playerBall == null)
+        if (playerBall == null || !playerBall.gameObject.scene.IsValid())
         {
             playerBall = FindFirstObjectByType<PlayerBallTrajectory>();
         }
