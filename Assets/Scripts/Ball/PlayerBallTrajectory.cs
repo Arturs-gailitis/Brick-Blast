@@ -1,8 +1,8 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using System;
 
 public class PlayerBallTrajectory : MonoBehaviour
 {
@@ -25,24 +25,30 @@ public class PlayerBallTrajectory : MonoBehaviour
     [SerializeField] private float ballSpeed = 10f;
     [SerializeField] private float bottomWallGap = 0.03f;
 
-    [Header("No brick hit reset")]
-    [SerializeField] private float noBrickHitTimeLimit = 6f;
+    [Header("Side wall bounce protection")]
+    [SerializeField] [Range(0.01f, 0.5f)] private float minimumVerticalDirection = 0.12f;
 
     [Header("Attack settings")]
     [SerializeField] [Min(1)] private int attackStrength = 1;
 
     public int AttackStrength => Mathf.Max(1, attackStrength);
+
+    public float MinimumSideWallVerticalDirection => Mathf.Clamp(minimumVerticalDirection, 0.01f, 0.5f);
+
     public event Action<int> AttackStrengthChanged;
 
     private Rigidbody2D ballRigidbody;
     private CircleCollider2D ballCollider;
     private Camera mainCamera;
+    private MultiBallShooter multiBallShooter;
 
     private bool canShoot = true;
     private bool turnIsActive;
 
+    private bool correctSideWallBounceOnNextFixedUpdate;
+    private float sideWallBounceVerticalSign = 1f;
+
     private Vector2 launchPosition;
-    private float timeSinceLastBrickHit;
 
     private bool gameplayInputEnabled = true;
     private bool waitForPointerRelease;
@@ -50,7 +56,6 @@ public class PlayerBallTrajectory : MonoBehaviour
     private int inputEnabledFrame;
 
     private readonly List<RaycastResult> uiRaycastResults = new List<RaycastResult>();
-    private MultiBallShooter multiBallShooter;
 
     private void Awake()
     {
@@ -71,9 +76,17 @@ public class PlayerBallTrajectory : MonoBehaviour
 
         attackStrength = GameSaveManager.LoadBallAttackStrength();
 
-        lineRenderer.positionCount = 0;
+        if (lineRenderer != null)
+        {
+            lineRenderer.positionCount = 0;
+        }
 
         multiBallShooter = GetComponent<MultiBallShooter>();
+    }
+
+    private void Start()
+    {
+        NotifyAttackStrengthChanged();
     }
 
     private void Update()
@@ -112,8 +125,6 @@ public class PlayerBallTrajectory : MonoBehaviour
 
             return;
         }
-
-        CheckNoBrickHitTimer();
 
         if (!canShoot)
         {
@@ -161,13 +172,27 @@ public class PlayerBallTrajectory : MonoBehaviour
         }
     }
 
+    private void FixedUpdate()
+    {
+        if (!correctSideWallBounceOnNextFixedUpdate)
+        {
+            return;
+        }
+
+        correctSideWallBounceOnNextFixedUpdate = false;
+
+        CorrectTooHorizontalVelocity();
+    }
+
     private void LaunchBall(Vector2 direction)
     {
         canShoot = false;
         turnIsActive = true;
 
         launchPosition = ballRigidbody.position;
-        timeSinceLastBrickHit = 0f;
+
+        correctSideWallBounceOnNextFixedUpdate = false;
+        sideWallBounceVerticalSign = direction.y < 0f ? -1f : 1f;
 
         HideTrajectory();
 
@@ -183,110 +208,118 @@ public class PlayerBallTrajectory : MonoBehaviour
         }
 
         ballRigidbody.WakeUp();
-
-        ballRigidbody.linearVelocity = direction * ballSpeed;
+        ballRigidbody.linearVelocity = direction.normalized * ballSpeed;
 
         ballRigidbody.angularVelocity = 0f;
-    }
-
-    private void CheckNoBrickHitTimer()
-    {
-        if (canShoot)
-        {
-            return;
-        }
-
-        timeSinceLastBrickHit += Time.deltaTime;
-
-        if (timeSinceLastBrickHit >= noBrickHitTimeLimit)
-        {
-            ReturnBallToLaunchPosition();
-        }
-    }
-
-    public void RegisterBrickHit(BrickCollision hitBrick)
-    {
-        if (!turnIsActive || hitBrick == null)
-        {
-            return;
-        }
-
-        timeSinceLastBrickHit = 0f;
-    }
-
-    public void IncreaseAttackStrength(int amount)
-    {
-        int safeAmount = Mathf.Max(1, amount);
-
-        attackStrength += safeAmount;
-
-        GameSaveManager.SaveBallAttackStrength(AttackStrength);
-
-        NotifyAttackStrengthChanged();
-    }
-
-    public void ResetAttackStrength()
-    {
-        attackStrength = 1;
-
-        GameSaveManager.SaveBallAttackStrength(1);
-
-        NotifyAttackStrengthChanged();
-    }
-
-    private void NotifyAttackStrengthChanged()
-    {
-        AttackStrengthChanged?.Invoke(AttackStrength);
-    }
-
-    private void ReturnBallToLaunchPosition(bool moveBricksDown = true)
-    {
-        StopBallAndFinishTurn(launchPosition, moveBricksDown);
-    }
-
-    private void StopBallAndFinishTurn(Vector2 finalPosition,bool moveBricksDown)
-    {
-
-        multiBallShooter?.CancelShot();
-        
-        bool shouldMoveBricks = turnIsActive && moveBricksDown;
-
-        turnIsActive = false;
-
-        ballRigidbody.linearVelocity = Vector2.zero;
-        ballRigidbody.angularVelocity = 0f;
-
-        ballRigidbody.position = finalPosition;
-        transform.position = finalPosition;
-
-        ballRigidbody.WakeUp();
-
-        canShoot = true;
-        timeSinceLastBrickHit = 0f;
-
-        if (shouldMoveBricks)
-        {
-            LevelManager.Instance?.MoveAllBricksDown();
-        }
-
-        HideTrajectory();
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (!IsBottomWall(collision.collider.gameObject.layer))
+        int collisionLayer = collision.collider.gameObject.layer;
+
+        if (IsBottomWall(collisionLayer))
+        {
+            float ballHalfHeight = ballCollider.bounds.extents.y;
+
+            float safeY = collision.collider.bounds.max.y + ballHalfHeight + bottomWallGap;
+
+            Vector2 safePosition = ballRigidbody.position;
+
+            safePosition.y = safeY;
+
+            StopBallAndFinishTurn(safePosition, true);
+
+            return;
+        }
+
+        if (IsSideWallCollision(collision, collisionLayer))
+        {
+            RememberSideWallBounceDirection(collision);
+
+            correctSideWallBounceOnNextFixedUpdate = true;
+        }
+    }
+
+    private bool IsSideWallCollision(Collision2D collision, int collisionLayer)
+    {
+        if (!IsTrajectoryWallLayer(collisionLayer))
+        {
+            return false;
+        }
+
+        foreach (ContactPoint2D contact in collision.contacts)
+        {
+            bool contactIsHorizontal = Mathf.Abs(contact.normal.x) > Mathf.Abs(contact.normal.y);
+
+            if (contactIsHorizontal)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void RememberSideWallBounceDirection(Collision2D collision)
+    {
+        float verticalVelocity = ballRigidbody.linearVelocity.y;
+
+        if (Mathf.Abs(verticalVelocity) < 0.0001f)
+        {
+            verticalVelocity = collision.relativeVelocity.y;
+        }
+
+        if (Mathf.Abs(verticalVelocity) >= 0.0001f)
+        {
+            sideWallBounceVerticalSign = Mathf.Sign(verticalVelocity);
+        }
+    }
+
+    private void CorrectTooHorizontalVelocity()
+    {
+        Vector2 velocity = ballRigidbody.linearVelocity;
+
+        float speed = velocity.magnitude;
+
+        if (speed < 0.0001f)
         {
             return;
         }
 
-        float ballHalfHeight = ballCollider.bounds.extents.y;
+        Vector2 direction = velocity / speed;
 
-        float safeY = collision.collider.bounds.max.y + ballHalfHeight + bottomWallGap;
+        float safeMinimumVerticalDirection = MinimumSideWallVerticalDirection;
 
-        Vector2 safePosition = ballRigidbody.position;
-        safePosition.y = safeY;
+        if (Mathf.Abs(direction.y) >= safeMinimumVerticalDirection)
+        {
+            return;
+        }
 
-        StopBallAndFinishTurn(safePosition, true);
+        float verticalSign;
+
+        if (Mathf.Abs(direction.y) >= 0.0001f)
+        {
+            verticalSign = Mathf.Sign(direction.y);
+        }
+        else
+        {
+            verticalSign = sideWallBounceVerticalSign;
+        }
+
+        float horizontalSign = direction.x < 0f ? -1f : 1f;
+
+        float correctedY =verticalSign * safeMinimumVerticalDirection;
+
+        float correctedX = horizontalSign * Mathf.Sqrt(1f - correctedY * correctedY);
+
+        Vector2 correctedDirection = new Vector2(correctedX, correctedY);
+
+        ballRigidbody.linearVelocity = correctedDirection * speed;
+    }
+
+    public bool IsTrajectoryWallLayer(int objectLayer)
+    {
+        return (wallLayer.value & (1 << objectLayer)) != 0;
     }
 
     private bool IsBottomWall(int objectLayer)
@@ -309,8 +342,7 @@ public class PlayerBallTrajectory : MonoBehaviour
         for (int i = 0; i < maxBounces; i++)
         {
             RaycastHit2D hit = Physics2D.CircleCast(currentPosition, ballRadius, currentDirection, trajectoryDistance,
-                wallLayer
-            );
+                    wallLayer);
 
             if (hit.collider == null)
             {
@@ -330,16 +362,138 @@ public class PlayerBallTrajectory : MonoBehaviour
 
             currentDirection = Vector2.Reflect(currentDirection, hit.normal).normalized;
 
+            bool hitSideWall = Mathf.Abs(hit.normal.x) > Mathf.Abs(hit.normal.y);
+
+            if (hitSideWall)
+            {
+                currentDirection = CorrectTooHorizontalDirection(currentDirection);
+            }
+
             currentPosition = bounceCenter + currentDirection * rayStartOffset;
         }
 
+        if (lineRenderer == null)
+        {
+            return;
+        }
+
         lineRenderer.positionCount = trajectoryPoints.Count;
+
         lineRenderer.SetPositions(trajectoryPoints.ToArray());
+    }
+
+    private Vector2 CorrectTooHorizontalDirection(Vector2 direction)
+    {
+        float safeMinimumVerticalDirection = MinimumSideWallVerticalDirection;
+
+        if (Mathf.Abs(direction.y) >= safeMinimumVerticalDirection)
+        {
+            return direction;
+        }
+
+        float verticalSign;
+
+        if (Mathf.Abs(direction.y) >= 0.0001f)
+        {
+            verticalSign = Mathf.Sign(direction.y);
+        }
+        else
+        {
+            verticalSign = 1f;
+        }
+
+        float horizontalSign = direction.x < 0f ? -1f : 1f;
+
+        float correctedY = verticalSign * safeMinimumVerticalDirection;
+
+        float correctedX = horizontalSign * Mathf.Sqrt(1f - correctedY * correctedY);
+
+        return new Vector2(correctedX, correctedY);
+    }
+
+    public void IncreaseAttackStrength(int amount)
+    {
+        int safeAmount = Mathf.Max(1, amount);
+
+        attackStrength += safeAmount;
+
+        GameSaveManager.SaveBallAttackStrength(AttackStrength);
+
+        NotifyAttackStrengthChanged();
+    }
+
+    public void ResetAttackStrength()
+    {
+        attackStrength = 1;
+
+        GameSaveManager.SaveBallAttackStrength(1);
+
+        NotifyAttackStrengthChanged();
+    }
+
+    public void SetAttackStrength(int newAttackStrength)
+    {
+        attackStrength = Mathf.Max(1, newAttackStrength);
+
+        AttackStrengthChanged?.Invoke(attackStrength);
+    }
+
+    private void NotifyAttackStrengthChanged()
+    {
+        AttackStrengthChanged?.Invoke(AttackStrength);
+    }
+
+    private void ReturnBallToLaunchPosition(bool moveBricksDown = true)
+    {
+        StopBallAndFinishTurn(launchPosition,moveBricksDown);
+    }
+
+    private void StopBallAndFinishTurn(Vector2 finalPosition, bool moveBricksDown)
+    {
+        multiBallShooter?.CancelShot();
+
+        bool shouldMoveBricks = turnIsActive && moveBricksDown;
+
+        turnIsActive = false;
+
+        correctSideWallBounceOnNextFixedUpdate = false;
+
+        ballRigidbody.linearVelocity = Vector2.zero;
+
+        ballRigidbody.angularVelocity = 0f;
+
+        ballRigidbody.position = finalPosition;
+
+        transform.position = finalPosition;
+
+        ballRigidbody.WakeUp();
+
+        canShoot = true;
+
+        if (shouldMoveBricks)
+        {
+            LevelManager.Instance?.MoveAllBricksDown();
+        }
+
+        HideTrajectory();
+    }
+
+    public void FinishMultiBallShot(Vector2 finalPosition)
+    {
+        if (!turnIsActive)
+        {
+            return;
+        }
+
+        StopBallAndFinishTurn(finalPosition, true);
     }
 
     private void HideTrajectory()
     {
-        lineRenderer.positionCount = 0;
+        if (lineRenderer != null)
+        {
+            lineRenderer.positionCount = 0;
+        }
     }
 
     private bool TryGetPointerData(out Vector2 worldPosition, out bool isPointerHeld, out bool wasPointerReleased)
@@ -369,6 +523,7 @@ public class PlayerBallTrajectory : MonoBehaviour
         else
         {
             isPointerHeld = Input.GetMouseButton(0);
+
             wasPointerReleased = Input.GetMouseButtonUp(0);
 
             if (!isPointerHeld && !wasPointerReleased)
@@ -398,9 +553,8 @@ public class PlayerBallTrajectory : MonoBehaviour
 
         float distanceToBallPlane = Mathf.Abs(mainCamera.transform.position.z - transform.position.z);
 
-        Vector3 convertedPosition = mainCamera.ScreenToWorldPoint(
-                new Vector3(screenPosition.x, screenPosition.y, distanceToBallPlane)
-            );
+        Vector3 convertedPosition = mainCamera.ScreenToWorldPoint(new Vector3(screenPosition.x, screenPosition.y,
+                    distanceToBallPlane));
 
         worldPosition = new Vector2(convertedPosition.x, convertedPosition.y);
 
@@ -453,6 +607,8 @@ public class PlayerBallTrajectory : MonoBehaviour
     {
         waitForPointerRelease = true;
         inputEnabledFrame = Time.frameCount;
+
+        correctSideWallBounceOnNextFixedUpdate = false;
 
         HideTrajectory();
     }
@@ -507,18 +663,21 @@ public class PlayerBallTrajectory : MonoBehaviour
         Vector2 restoredPosition = new Vector2(savedBall.x, savedBall.y);
 
         ballRigidbody.linearVelocity = Vector2.zero;
+
         ballRigidbody.angularVelocity = 0f;
 
         ballRigidbody.position = restoredPosition;
+
         transform.position = restoredPosition;
 
         ballRigidbody.WakeUp();
 
         launchPosition = restoredPosition;
-        timeSinceLastBrickHit = 0f;
 
         canShoot = true;
         turnIsActive = false;
+
+        correctSideWallBounceOnNextFixedUpdate = false;
 
         gameplayInputEnabled = true;
         waitForPointerRelease = true;
@@ -541,14 +700,10 @@ public class PlayerBallTrajectory : MonoBehaviour
         lineRenderer.alignment = LineAlignment.View;
 
         lineRenderer.numCornerVertices = cornerSmoothness;
+
         lineRenderer.numCapVertices = capSmoothness;
 
         lineRenderer.generateLightingData = false;
-    }
-
-    private void Start()
-    {
-        NotifyAttackStrengthChanged();
     }
 
     private void OnDisable()
@@ -569,21 +724,5 @@ public class PlayerBallTrajectory : MonoBehaviour
         }
 
         GameSaveManager.SaveBallAttackStrength(AttackStrength);
-    }
-
-    public void SetAttackStrength(int newAttackStrength)
-    {
-        attackStrength = Mathf.Max(1, newAttackStrength);
-        AttackStrengthChanged?.Invoke(attackStrength);
-    }
-
-    public void FinishMultiBallShot(Vector2 finalPosition)
-    {
-        if (!turnIsActive)
-        {
-            return;
-        }
-
-        StopBallAndFinishTurn(finalPosition, true);
     }
 }
