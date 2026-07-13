@@ -25,11 +25,8 @@ public class PlayerBallTrajectory : MonoBehaviour
     [SerializeField] private float ballSpeed = 10f;
     [SerializeField] private float bottomWallGap = 0.03f;
 
-    [Header("Horizontal soft-lock reset")]
-    [SerializeField] [Min(0.1f)] private float horizontalSoftLockDelay = 1f;
-    [SerializeField] [Range(0f, 0.5f)] private float maximumVerticalToHorizontalRatio;
-    [SerializeField] [Min(0.01f)] private float minimumHorizontalSpeed = 0.5f;
-    [SerializeField] [Min(0f)] private float brickRowVerticalPadding = 0.05f;
+    [Header("No brick hit reset")]
+    [SerializeField] private float noBrickHitTimeLimit = 6f;
 
     [Header("Attack settings")]
     [SerializeField] [Min(1)] private int attackStrength = 1;
@@ -45,8 +42,7 @@ public class PlayerBallTrajectory : MonoBehaviour
     private bool turnIsActive;
 
     private Vector2 launchPosition;
-    private float horizontalSoftLockTimer;
-    private bool softLockResetInProgress;
+    private float timeSinceLastBrickHit;
 
     private bool gameplayInputEnabled = true;
     private bool waitForPointerRelease;
@@ -117,6 +113,8 @@ public class PlayerBallTrajectory : MonoBehaviour
             return;
         }
 
+        CheckNoBrickHitTimer();
+
         if (!canShoot)
         {
             HideTrajectory();
@@ -163,19 +161,13 @@ public class PlayerBallTrajectory : MonoBehaviour
         }
     }
 
-    private void FixedUpdate()
-    {
-        CheckMainBallHorizontalSoftLock();
-    }
-
     private void LaunchBall(Vector2 direction)
     {
         canShoot = false;
         turnIsActive = true;
 
         launchPosition = ballRigidbody.position;
-        horizontalSoftLockTimer = 0f;
-        softLockResetInProgress = false;
+        timeSinceLastBrickHit = 0f;
 
         HideTrajectory();
 
@@ -197,57 +189,19 @@ public class PlayerBallTrajectory : MonoBehaviour
         ballRigidbody.angularVelocity = 0f;
     }
 
-    private void CheckMainBallHorizontalSoftLock()
+    private void CheckNoBrickHitTimer()
     {
-        UpdateHorizontalSoftLockTimer(ballRigidbody, ballCollider, ref horizontalSoftLockTimer);
-    }
-
-    public void UpdateHorizontalSoftLockTimer(Rigidbody2D checkedRigidbody, Collider2D checkedCollider, ref float checkedBallTimer)
-    {
-        if (!turnIsActive || softLockResetInProgress || checkedRigidbody == null || checkedCollider == null ||
-            !checkedRigidbody.simulated)
-        {
-            checkedBallTimer = 0f;
-            return;
-        }
-
-        Vector2 velocity = checkedRigidbody.linearVelocity;
-
-        float horizontalSpeed = Mathf.Abs(velocity.x);
-        float verticalSpeed = Mathf.Abs(velocity.y);
-
-        bool isMovingAlmostHorizontally = horizontalSpeed >= minimumHorizontalSpeed && 
-            verticalSpeed <= horizontalSpeed * maximumVerticalToHorizontalRatio;
-
-        if (!isMovingAlmostHorizontally)
-        {
-            checkedBallTimer = 0f;
-            return;
-        }
-
-        float ballHalfHeight = checkedCollider.bounds.extents.y;
-
-        float rowMinY = checkedRigidbody.position.y - ballHalfHeight - brickRowVerticalPadding;
-
-        float rowMaxY = checkedRigidbody.position.y + ballHalfHeight + brickRowVerticalPadding;
-
-        if (BrickCollision.ExistsInHorizontalBand(rowMinY, rowMaxY))
-        {
-            checkedBallTimer = 0f;
-            return;
-        }
-
-        checkedBallTimer += Time.fixedDeltaTime;
-
-        if (checkedBallTimer < horizontalSoftLockDelay)
+        if (canShoot)
         {
             return;
         }
 
-        checkedBallTimer = 0f;
-        softLockResetInProgress = true;
+        timeSinceLastBrickHit += Time.deltaTime;
 
-        ReturnBallToLaunchPosition();
+        if (timeSinceLastBrickHit >= noBrickHitTimeLimit)
+        {
+            ReturnBallToLaunchPosition();
+        }
     }
 
     public void RegisterBrickHit(BrickCollision hitBrick)
@@ -257,7 +211,7 @@ public class PlayerBallTrajectory : MonoBehaviour
             return;
         }
 
-        horizontalSoftLockTimer = 0f;
+        timeSinceLastBrickHit = 0f;
     }
 
     public void IncreaseAttackStrength(int amount)
@@ -308,8 +262,7 @@ public class PlayerBallTrajectory : MonoBehaviour
         ballRigidbody.WakeUp();
 
         canShoot = true;
-        horizontalSoftLockTimer = 0f;
-        softLockResetInProgress = false;
+        timeSinceLastBrickHit = 0f;
 
         if (shouldMoveBricks)
         {
@@ -562,8 +515,7 @@ public class PlayerBallTrajectory : MonoBehaviour
         ballRigidbody.WakeUp();
 
         launchPosition = restoredPosition;
-        horizontalSoftLockTimer = 0f;
-        softLockResetInProgress = false;
+        timeSinceLastBrickHit = 0f;
 
         canShoot = true;
         turnIsActive = false;

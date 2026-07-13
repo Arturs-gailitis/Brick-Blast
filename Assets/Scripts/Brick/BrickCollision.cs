@@ -1,12 +1,8 @@
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
 public class BrickCollision : MonoBehaviour
 {
-    private static readonly HashSet<BrickCollision> activeBricks =
-        new HashSet<BrickCollision>();
-
     [Header("Brick settings")]
     [SerializeField] [Min(1)] private int health = 3;
     [SerializeField] private int score;
@@ -16,53 +12,12 @@ public class BrickCollision : MonoBehaviour
     [SerializeField] private TMP_Text healthText;
 
     private SpriteRenderer spriteRenderer;
-    private Collider2D brickCollider;
     private bool isDestroyed;
-
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    private static void ClearActiveBricks()
-    {
-        activeBricks.Clear();
-    }
 
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
-        brickCollider = GetComponent<Collider2D>();
-
         UpdateBrickVisuals();
-    }
-
-    private void OnEnable()
-    {
-        activeBricks.Add(this);
-    }
-
-    private void OnDisable()
-    {
-        activeBricks.Remove(this);
-    }
-
-    public static bool ExistsInHorizontalBand(float minimumY, float maximumY)
-    {
-        foreach (BrickCollision brick in activeBricks)
-        {
-            if (brick == null || brick.isDestroyed || brick.brickCollider == null || !brick.brickCollider.enabled)
-            {
-                continue;
-            }
-
-            Bounds brickBounds = brick.brickCollider.bounds;
-
-            bool overlapsHorizontalBand = brickBounds.max.y >= minimumY && brickBounds.min.y <= maximumY;
-
-            if (overlapsHorizontalBand)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     public void Configure(BrickConfig brickConfig)
@@ -116,7 +71,8 @@ public class BrickCollision : MonoBehaviour
 
         int ballDamage = 1;
 
-        MultiBallProjectile projectile = collision.collider.GetComponent<MultiBallProjectile>();
+        MultiBallProjectile projectile =
+            collision.collider.GetComponent<MultiBallProjectile>();
 
         if (projectile != null)
         {
@@ -125,7 +81,8 @@ public class BrickCollision : MonoBehaviour
         }
         else
         {
-            PlayerBallTrajectory mainBall = collision.collider.GetComponent<PlayerBallTrajectory>();
+            PlayerBallTrajectory mainBall =
+                collision.collider.GetComponent<PlayerBallTrajectory>();
 
             if (mainBall != null)
             {
