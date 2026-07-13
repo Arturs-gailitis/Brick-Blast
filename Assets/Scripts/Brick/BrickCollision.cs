@@ -76,7 +76,7 @@ public class BrickCollision : MonoBehaviour
 
         if (projectile != null)
         {
-            projectile.RegisterBrickHit();
+            projectile.RegisterBrickHit(this);
             ballDamage = projectile.AttackStrength;
         }
         else
@@ -86,7 +86,7 @@ public class BrickCollision : MonoBehaviour
 
             if (mainBall != null)
             {
-                mainBall.RegisterBrickHit();
+                mainBall.RegisterBrickHit(this);
                 ballDamage = mainBall.AttackStrength;
             }
         }

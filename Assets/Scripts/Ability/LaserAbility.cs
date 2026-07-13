@@ -72,8 +72,6 @@ public class LaserAbility : MonoBehaviour
     private void HandleMultiBallProjectile(MultiBallProjectile projectile)
     {
 
-        projectile.RegisterBrickHit();
-
         PlayerBallTrajectory ownerBall = projectile.OwnerBall;
 
         if (ownerBall != null)
@@ -107,8 +105,6 @@ public class LaserAbility : MonoBehaviour
         }
 
         hasBeenUsedByMainBall = true;
-
-        mainBall.RegisterBrickHit();
 
         FireLaser();
         DestroyAbility();

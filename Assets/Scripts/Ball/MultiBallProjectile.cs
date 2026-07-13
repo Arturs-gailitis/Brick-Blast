@@ -64,12 +64,14 @@ public class MultiBallProjectile : MonoBehaviour
             direction.normalized * ballSpeed;
     }
 
-    public void RegisterBrickHit()
+    public void RegisterBrickHit(BrickCollision hitBrick)
     {
-        if (ownerBall != null)
+        if (hitBrick == null)
         {
-            ownerBall.RegisterBrickHit();
+            return;
         }
+
+        ownerBall?.RegisterBrickHit(hitBrick);
     }
 
     public void IncreaseAttackStrength(int amount)

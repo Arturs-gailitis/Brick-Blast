@@ -48,8 +48,6 @@ public class PowerAbility : MonoBehaviour
         if (projectile != null)
         {
             hasBeenUsed = true;
-
-            projectile.RegisterBrickHit();
             projectile.IncreaseAttackStrength(Value);
 
             HideAbilityObject();
@@ -65,8 +63,6 @@ public class PowerAbility : MonoBehaviour
         }
 
         hasBeenUsed = true;
-
-        ballTrajectory.RegisterBrickHit();
         ballTrajectory.IncreaseAttackStrength(Value);
 
         HideAbilityObject();

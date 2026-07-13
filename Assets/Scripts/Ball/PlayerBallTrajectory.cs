@@ -209,8 +209,13 @@ public class PlayerBallTrajectory : MonoBehaviour
         }
     }
 
-    public void RegisterBrickHit()
+    public void RegisterBrickHit(BrickCollision hitBrick)
     {
+        if (!turnIsActive || hitBrick == null)
+        {
+            return;
+        }
+
         timeSinceLastBrickHit = 0f;
     }
 

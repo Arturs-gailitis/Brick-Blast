@@ -80,8 +80,6 @@ public class DirectionAbility : MonoBehaviour
             return;
         }
 
-        projectile.RegisterBrickHit();
-
         Rigidbody2D ballRigidbody =
             projectile.GetComponent<Rigidbody2D>();
 
@@ -132,8 +130,6 @@ public class DirectionAbility : MonoBehaviour
         }
 
         hasBeenUsedByMainBall = true;
-
-        mainBall.RegisterBrickHit();
 
         Rigidbody2D ballRigidbody =
             mainBall.GetComponent<Rigidbody2D>();
