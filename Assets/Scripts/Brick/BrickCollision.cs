@@ -7,6 +7,7 @@ public class BrickCollision : MonoBehaviour
     [SerializeField] [Min(1)] private int health = 3;
     [SerializeField] private int score;
     [SerializeField] private string blockType;
+    [SerializeField] private int rotation;
 
     [Header("Reference")]
     [SerializeField] private TMP_Text healthText;
@@ -17,6 +18,7 @@ public class BrickCollision : MonoBehaviour
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+
         UpdateBrickVisuals();
     }
 
@@ -29,9 +31,13 @@ public class BrickCollision : MonoBehaviour
 
         health = Mathf.Max(1, brickConfig.hitPoints);
         score = Mathf.Max(0, brickConfig.score);
+
         blockType = brickConfig.blockType;
+        rotation = NormalizeRotation(brickConfig.rotation);
+
         isDestroyed = false;
 
+        ApplyRotation();
         UpdateBrickVisuals();
     }
 
@@ -44,9 +50,13 @@ public class BrickCollision : MonoBehaviour
 
         health = Mathf.Max(1, savedBrick.health);
         score = Mathf.Max(0, savedBrick.score);
+
         blockType = savedBrick.blockType;
+        rotation = NormalizeRotation(savedBrick.rotation);
+
         isDestroyed = false;
 
+        ApplyRotation();
         UpdateBrickVisuals();
     }
 
@@ -56,10 +66,35 @@ public class BrickCollision : MonoBehaviour
         {
             x = transform.position.x,
             y = transform.position.y,
+
             health = health,
             score = score,
-            blockType = blockType
+
+            blockType = blockType,
+            rotation = rotation
         };
+    }
+
+    private void ApplyRotation()
+    {
+        transform.localRotation =Quaternion.Euler(0f, 0f, rotation);
+
+        if (healthText != null)
+        {
+            healthText.transform.rotation = Quaternion.identity;
+        }
+    }
+
+    private int NormalizeRotation(int value)
+    {
+        int normalizedRotation = ((value % 360) + 360) % 360;
+
+        if (normalizedRotation == 90 || normalizedRotation == 180 || normalizedRotation == 270)
+        {
+            return normalizedRotation;
+        }
+
+        return 0;
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -71,8 +106,7 @@ public class BrickCollision : MonoBehaviour
 
         int ballDamage = 1;
 
-        MultiBallProjectile projectile =
-            collision.collider.GetComponent<MultiBallProjectile>();
+        MultiBallProjectile projectile = collision.collider.GetComponent<MultiBallProjectile>();
 
         if (projectile != null)
         {
@@ -80,8 +114,7 @@ public class BrickCollision : MonoBehaviour
         }
         else
         {
-            PlayerBallTrajectory mainBall =
-                collision.collider.GetComponent<PlayerBallTrajectory>();
+            PlayerBallTrajectory mainBall = collision.collider.GetComponent<PlayerBallTrajectory>();
 
             if (mainBall != null)
             {

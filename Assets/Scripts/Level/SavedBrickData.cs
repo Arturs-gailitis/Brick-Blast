@@ -8,4 +8,5 @@ public class SavedBrickData
     public int health;
     public int score;
     public string blockType;
+    public int rotation;
 }

@@ -423,6 +423,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   brickPrefab: {fileID: 5845297711985745582, guid: dfcf4fde16325424ca57f3a31383abcf, type: 3}
+  halfBrickPrefab: {fileID: 5845297711985745582, guid: 854ec50337b8b974db486d6fcc1578b9, type: 3}
   brickConfigReader: {fileID: 1138494234}
   walls:
   - {fileID: 722885930230346285, guid: 888bfe6078e0ec74eb70c8109e1ee6b4, type: 3}

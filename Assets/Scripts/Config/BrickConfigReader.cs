@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Globalization;
 using UnityEngine;
@@ -9,6 +8,7 @@ public class BrickConfigReader : MonoBehaviour
     [SerializeField] private TextAsset brickConfigCsv;
 
     private readonly List<BrickConfig> allBricks = new List<BrickConfig>();
+
     private bool isLoaded;
 
     public List<BrickConfig> GetBricksForLevel(int selectedLevel)
@@ -32,6 +32,7 @@ public class BrickConfigReader : MonoBehaviour
     {
         isLoaded = false;
         allBricks.Clear();
+
         LoadCsvIfNeeded();
     }
 
@@ -43,6 +44,7 @@ public class BrickConfigReader : MonoBehaviour
         }
 
         isLoaded = true;
+        allBricks.Clear();
 
         if (brickConfigCsv == null)
         {
@@ -62,62 +64,67 @@ public class BrickConfigReader : MonoBehaviour
 
             string[] values = line.Split(',');
 
-            if (values.Length < 6)
+            if (values.Length < 7)
             {
                 continue;
             }
 
-            bool levelIsValid = int.TryParse(
-                values[0].Trim(),
-                NumberStyles.Integer,
-                CultureInfo.InvariantCulture,
-                out int level
-            );
+            bool levelIsValid = TryReadInt(values[0], out int level);
 
-            bool rowIsValid = int.TryParse(
-                values[1].Trim(),
-                NumberStyles.Integer,
-                CultureInfo.InvariantCulture,
-                out int row
-            );
+            bool rowIsValid = TryReadInt(values[1], out int row);
 
-            bool columnIsValid = int.TryParse(
-                values[2].Trim(),
-                NumberStyles.Integer,
-                CultureInfo.InvariantCulture,
-                out int column
-            );
+            bool columnIsValid = TryReadInt(values[2], out int column);
 
-            bool hitPointsAreValid = int.TryParse(
-                values[3].Trim(),
-                NumberStyles.Integer,
-                CultureInfo.InvariantCulture,
-                out int hitPoints
-            );
+            bool hitPointsAreValid = TryReadInt(values[3], out int hitPoints);
 
-            bool scoreIsValid = int.TryParse(
-                values[4].Trim(),
-                NumberStyles.Integer,
-                CultureInfo.InvariantCulture,
-                out int score
-            );
+            bool scoreIsValid = TryReadInt(values[4], out int score);
 
-            bool numbersAreValid = levelIsValid && rowIsValid && columnIsValid && hitPointsAreValid && scoreIsValid;
+            bool rotationIsValid = TryReadInt(values[6], out int rotation);
+
+            bool numbersAreValid = levelIsValid && rowIsValid && columnIsValid && hitPointsAreValid && scoreIsValid 
+                && rotationIsValid;
 
             if (!numbersAreValid)
             {
                 continue;
             }
 
-            allBricks.Add(new BrickConfig
+            string blockType = values[5].Trim().ToLowerInvariant();
+
+            if (blockType != "full" && blockType != "half")
             {
-                level = level,
-                row = row,
-                column = column,
-                hitPoints = Mathf.Max(1, hitPoints),
-                score = Mathf.Max(0, score),
-                blockType = values[5].Trim()
-            });
+
+                blockType = "full";
+            }
+
+            allBricks.Add(new BrickConfig
+                {
+                    level = Mathf.Max(1, level),
+                    row = Mathf.Max(0, row),
+                    column = Mathf.Max(0, column),
+                    hitPoints = Mathf.Max(1, hitPoints),
+                    score = Mathf.Max(0, score),
+                    blockType = blockType,
+                    rotation = NormalizeRotation(rotation)
+                }
+            );
         }
+    }
+
+    private bool TryReadInt(string value, out int result)
+    {
+        return int.TryParse(value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out result);
+    }
+
+    private int NormalizeRotation(int value)
+    {
+        int normalizedRotation = ((value % 360) + 360) % 360;
+
+        if (normalizedRotation == 90 || normalizedRotation == 180 || normalizedRotation == 270)
+        {
+            return normalizedRotation;
+        }
+
+        return 0;
     }
 }
