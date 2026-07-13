@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,7 +9,7 @@ public class MultiBallShooter : MonoBehaviour
 
     [Header("Multi-ball settings")]
     [SerializeField] [Min(1)] private int ballsPerShot = 10;
-    [SerializeField] [Min(0f)] private float delayBetweenBalls = 0.08f;
+    [SerializeField] [Min(0.01f)] private float distanceBetweenBalls = 0.8f;
 
     public bool ShotIsActive => shotIsActive;
 
@@ -23,14 +22,21 @@ public class MultiBallShooter : MonoBehaviour
 
     private readonly List<MultiBallProjectile> activeBalls = new List<MultiBallProjectile>();
 
-    private Coroutine shootingCoroutine;
-
     private bool shotIsActive;
     private bool allBallsWereSpawned;
     private bool hasFirstReturnPosition;
 
     private Vector2 launchPosition;
     private Vector2 firstReturnPosition;
+    
+    private Vector2 currentDirection;
+    private float currentBallSpeed;
+    private LayerMask currentBottomWallLayer;
+    private float currentBottomWallGap;
+
+    private int spawnedBallCount;
+    private int fixedStepCounter;
+    private int fixedStepsBetweenBalls;
 
     private void Awake()
     {
@@ -40,11 +46,26 @@ public class MultiBallShooter : MonoBehaviour
         ownerCollider = GetComponent<Collider2D>();
     }
 
-    public bool StartShot(
-        Vector2 direction,
-        float ballSpeed,
-        LayerMask bottomWallLayer,
-        float bottomWallGap)
+    private void FixedUpdate()
+    {
+        if (!shotIsActive || allBallsWereSpawned)
+        {
+            return;
+        }
+
+        fixedStepCounter++;
+
+        if (fixedStepCounter < fixedStepsBetweenBalls)
+        {
+            return;
+        }
+
+        fixedStepCounter = 0;
+
+        SpawnNextBall();
+    }
+
+    public bool StartShot(Vector2 direction, float ballSpeed, LayerMask bottomWallLayer, float bottomWallGap)
     {
         if (shotIsActive || shotBallPrefab == null)
         {
@@ -57,9 +78,19 @@ public class MultiBallShooter : MonoBehaviour
         allBallsWereSpawned = false;
         hasFirstReturnPosition = false;
 
-        launchPosition = ownerRigidbody != null
-            ? ownerRigidbody.position
-            : (Vector2)transform.position;
+        spawnedBallCount = 0;
+        fixedStepCounter = 0;
+
+        currentDirection = direction.normalized;
+        currentBallSpeed = Mathf.Max(0.01f, ballSpeed);
+        currentBottomWallLayer = bottomWallLayer;
+        currentBottomWallGap = bottomWallGap;
+
+        launchPosition = ownerRigidbody != null ? ownerRigidbody.position : (Vector2)transform.position;
+
+        float distancePerFixedStep = currentBallSpeed * Time.fixedDeltaTime;
+
+        fixedStepsBetweenBalls = Mathf.Max(1,Mathf.RoundToInt(distanceBetweenBalls / distancePerFixedStep));
 
         if (ownerRigidbody != null)
         {
@@ -69,74 +100,37 @@ public class MultiBallShooter : MonoBehaviour
 
         SetOwnerBallVisible(false);
 
-        shootingCoroutine = StartCoroutine(
-            SpawnBallsOneByOne(
-                direction.normalized,
-                ballSpeed,
-                bottomWallLayer,
-                bottomWallGap
-            )
-        );
+        SpawnNextBall();
 
         return true;
     }
 
-    private IEnumerator SpawnBallsOneByOne(
-        Vector2 direction,
-        float ballSpeed,
-        LayerMask bottomWallLayer,
-        float bottomWallGap)
+    private void SpawnNextBall()
     {
-        int safeBallCount = Mathf.Max(1, ballsPerShot);
-        float safeDelay = Mathf.Max(0f, delayBetweenBalls);
-
-        for (int i = 0; i < safeBallCount; i++)
+        if (!shotIsActive || allBallsWereSpawned)
         {
-            if (!shotIsActive)
-            {
-                yield break;
-            }
-
-            SpawnBall(
-                direction,
-                ballSpeed,
-                bottomWallLayer,
-                bottomWallGap
-            );
-
-            if (i < safeBallCount - 1)
-            {
-                if (safeDelay > 0f)
-                {
-                    yield return new WaitForSeconds(safeDelay);
-                }
-                else
-                {
-                    yield return null;
-                }
-            }
+            return;
         }
 
-        shootingCoroutine = null;
-        allBallsWereSpawned = true;
+        int safeBallCount = Mathf.Max(1, ballsPerShot);
 
-        TryFinishShot();
+        SpawnBall(currentDirection, currentBallSpeed, currentBottomWallLayer, currentBottomWallGap);
+
+        spawnedBallCount++;
+
+        if (spawnedBallCount >= safeBallCount)
+        {
+            allBallsWereSpawned = true;
+
+            TryFinishShot();
+        }
     }
 
-    private void SpawnBall(
-        Vector2 direction,
-        float ballSpeed,
-        LayerMask bottomWallLayer,
-        float bottomWallGap)
+    private void SpawnBall(Vector2 direction, float ballSpeed, LayerMask bottomWallLayer, float bottomWallGap)
     {
-        GameObject spawnedObject = Instantiate(
-            shotBallPrefab,
-            launchPosition,
-            transform.rotation
-        );
+        GameObject spawnedObject = Instantiate(shotBallPrefab, launchPosition, transform.rotation);
 
-        MultiBallProjectile projectile =
-            spawnedObject.GetComponent<MultiBallProjectile>();
+        MultiBallProjectile projectile = spawnedObject.GetComponent<MultiBallProjectile>();
 
         if (projectile == null)
         {
@@ -144,18 +138,13 @@ public class MultiBallShooter : MonoBehaviour
             return;
         }
 
-        Collider2D projectileCollider =
-            spawnedObject.GetComponent<Collider2D>();
+        Collider2D projectileCollider = spawnedObject.GetComponent<Collider2D>();
 
         if (projectileCollider != null)
         {
             if (ownerCollider != null)
             {
-                Physics2D.IgnoreCollision(
-                    projectileCollider,
-                    ownerCollider,
-                    true
-                );
+                Physics2D.IgnoreCollision(projectileCollider, ownerCollider, true);
             }
 
             foreach (MultiBallProjectile activeBall in activeBalls)
@@ -165,35 +154,21 @@ public class MultiBallShooter : MonoBehaviour
                     continue;
                 }
 
-                Collider2D activeCollider =
-                    activeBall.GetComponent<Collider2D>();
+                Collider2D activeCollider = activeBall.GetComponent<Collider2D>();
 
                 if (activeCollider != null)
                 {
-                    Physics2D.IgnoreCollision(
-                        projectileCollider,
-                        activeCollider,
-                        true
-                    );
+                    Physics2D.IgnoreCollision(projectileCollider, activeCollider, true);
                 }
             }
         }
 
         activeBalls.Add(projectile);
 
-        projectile.Initialize(
-            this,
-            ownerBall,
-            direction,
-            ballSpeed,
-            bottomWallLayer,
-            bottomWallGap
-        );
+        projectile.Initialize(this, ownerBall, direction, ballSpeed, bottomWallLayer, bottomWallGap);
     }
 
-    public void ProjectileReturned(
-        MultiBallProjectile projectile,
-        Vector2 returnPosition)
+    public void ProjectileReturned(MultiBallProjectile projectile, Vector2 returnPosition)
     {
         if (!shotIsActive || projectile == null)
         {
@@ -228,9 +203,7 @@ public class MultiBallShooter : MonoBehaviour
 
         shotIsActive = false;
 
-        Vector2 finalPosition = hasFirstReturnPosition
-            ? firstReturnPosition
-            : launchPosition;
+        Vector2 finalPosition = hasFirstReturnPosition ? firstReturnPosition : launchPosition;
 
         ShotFinished?.Invoke();
 
@@ -248,17 +221,14 @@ public class MultiBallShooter : MonoBehaviour
     {
         bool wasShotActive = shotIsActive;
 
-        if (shootingCoroutine != null)
-        {
-            StopCoroutine(shootingCoroutine);
-            shootingCoroutine = null;
-        }
-
         RemoveAllProjectiles();
 
         shotIsActive = false;
         allBallsWereSpawned = false;
         hasFirstReturnPosition = false;
+
+        spawnedBallCount = 0;
+        fixedStepCounter = 0;
 
         if (wasShotActive)
         {
