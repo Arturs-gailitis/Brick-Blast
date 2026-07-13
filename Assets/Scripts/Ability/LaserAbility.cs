@@ -43,9 +43,10 @@ public class LaserAbility : MonoBehaviour
 
         Aim = abilityConfig.aim;
 
+        UnregisterMultiBallShooter();
+
         hasBeenUsedByMainBall = false;
         isWaitingForMultiBallShotToEnd = false;
-        activeMultiBallShooter = null;
 
         FindPreviewTextIfNeeded();
         UpdateAimPreview();
@@ -72,20 +73,21 @@ public class LaserAbility : MonoBehaviour
     private void HandleMultiBallProjectile(MultiBallProjectile projectile)
     {
 
+        FireLaser();
+
         PlayerBallTrajectory ownerBall = projectile.OwnerBall;
 
-        if (ownerBall != null)
-        {
-            MultiBallShooter shooter =
-                ownerBall.GetComponent<MultiBallShooter>();
+        MultiBallShooter shooter = ownerBall != null
+            ? ownerBall.GetComponent<MultiBallShooter>()
+            : null;
 
-            if (shooter != null)
-            {
-                RegisterMultiBallShooter(shooter);
-            }
+        if (shooter == null || !shooter.ShotIsActive)
+        {
+            DestroyAbility();
+            return;
         }
 
-        FireLaser();
+        RegisterMultiBallShooter(shooter);
     }
 
     private void HandleMainBall(
@@ -134,6 +136,22 @@ public class LaserAbility : MonoBehaviour
 
         UnregisterMultiBallShooter();
         DestroyAbility();
+    }
+
+    private void Update()
+    {
+        if (!isWaitingForMultiBallShotToEnd)
+        {
+            return;
+        }
+
+        if (activeMultiBallShooter == null || !activeMultiBallShooter.ShotIsActive)
+        {
+            isWaitingForMultiBallShotToEnd = false;
+
+            UnregisterMultiBallShooter();
+            DestroyAbility();
+        }
     }
 
     private void UnregisterMultiBallShooter()

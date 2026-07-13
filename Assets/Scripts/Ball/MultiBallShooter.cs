@@ -21,8 +21,7 @@ public class MultiBallShooter : MonoBehaviour
     private SpriteRenderer ownerSpriteRenderer;
     private Collider2D ownerCollider;
 
-    private readonly List<MultiBallProjectile> activeBalls =
-        new List<MultiBallProjectile>();
+    private readonly List<MultiBallProjectile> activeBalls = new List<MultiBallProjectile>();
 
     private Coroutine shootingCoroutine;
 
@@ -247,6 +246,8 @@ public class MultiBallShooter : MonoBehaviour
 
     public void CancelShot()
     {
+        bool wasShotActive = shotIsActive;
+
         if (shootingCoroutine != null)
         {
             StopCoroutine(shootingCoroutine);
@@ -258,6 +259,11 @@ public class MultiBallShooter : MonoBehaviour
         shotIsActive = false;
         allBallsWereSpawned = false;
         hasFirstReturnPosition = false;
+
+        if (wasShotActive)
+        {
+            ShotFinished?.Invoke();
+        }
 
         SetOwnerBallVisible(true);
     }
