@@ -281,7 +281,10 @@ MonoBehaviour:
   minimumAimDistance: 0.35
   ballSpeed: 9
   bottomWallGap: 0.03
-  noBrickHitTimeLimit: 6
+  horizontalSoftLockDelay: 1
+  maximumVerticalToHorizontalRatio: 0.03
+  minimumHorizontalSpeed: 0.5
+  brickRowVerticalPadding: 0.05
   attackStrength: 1
 --- !u!114 &352935097784014177
 MonoBehaviour:
@@ -315,7 +318,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shotBallPrefab: {fileID: 6610409304325331122, guid: 95449dd6ed6f0b847a426d6cf90528a4, type: 3}
   ballsPerShot: 10
-  delayBetweenBalls: 0.08
+  distanceBetweenBalls: 0.8
 --- !u!1001 &7039711220520819012
 PrefabInstance:
   m_ObjectHideFlags: 0

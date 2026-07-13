@@ -25,6 +25,7 @@ public class MultiBallProjectile : MonoBehaviour
     private LayerMask bottomWallLayer;
 
     private float bottomWallGap;
+    private float horizontalSoftLockTimer;
     private bool hasReturned;
 
     private void Awake()
@@ -37,13 +38,8 @@ public class MultiBallProjectile : MonoBehaviour
         ballRigidbody.angularVelocity = 0f;
     }
 
-    public void Initialize(
-        MultiBallShooter newShooter,
-        PlayerBallTrajectory newOwnerBall,
-        Vector2 direction,
-        float ballSpeed,
-        LayerMask newBottomWallLayer,
-        float newBottomWallGap)
+    public void Initialize(MultiBallShooter newShooter, PlayerBallTrajectory newOwnerBall, Vector2 direction, 
+        float ballSpeed, LayerMask newBottomWallLayer, float newBottomWallGap)
     {
         shooter = newShooter;
         ownerBall = newOwnerBall;
@@ -52,6 +48,7 @@ public class MultiBallProjectile : MonoBehaviour
         bottomWallGap = newBottomWallGap;
 
         hasReturned = false;
+        horizontalSoftLockTimer = 0f;
 
         ballCollider.enabled = true;
 
@@ -60,8 +57,18 @@ public class MultiBallProjectile : MonoBehaviour
         ballRigidbody.angularVelocity = 0f;
         ballRigidbody.WakeUp();
 
-        ballRigidbody.linearVelocity =
-            direction.normalized * ballSpeed;
+        ballRigidbody.linearVelocity = direction.normalized * ballSpeed;
+    }
+
+    private void FixedUpdate()
+    {
+        if (hasReturned || ownerBall == null)
+        {
+            horizontalSoftLockTimer = 0f;
+            return;
+        }
+
+        ownerBall.UpdateHorizontalSoftLockTimer(ballRigidbody, ballCollider, ref horizontalSoftLockTimer);
     }
 
     public void RegisterBrickHit(BrickCollision hitBrick)
@@ -70,6 +77,8 @@ public class MultiBallProjectile : MonoBehaviour
         {
             return;
         }
+
+        horizontalSoftLockTimer = 0f;
 
         ownerBall?.RegisterBrickHit(hitBrick);
     }
@@ -84,12 +93,9 @@ public class MultiBallProjectile : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        int collisionLayer =
-            collision.collider.gameObject.layer;
+        int collisionLayer = collision.collider.gameObject.layer;
 
-        bool hitBottomWall =
-            (bottomWallLayer.value &
-             (1 << collisionLayer)) != 0;
+        bool hitBottomWall = (bottomWallLayer.value & (1 << collisionLayer)) != 0;
 
         if (!hitBottomWall || hasReturned)
         {
@@ -98,16 +104,11 @@ public class MultiBallProjectile : MonoBehaviour
 
         hasReturned = true;
 
-        float ballHalfHeight =
-            ballCollider.bounds.extents.y;
+        float ballHalfHeight = ballCollider.bounds.extents.y;
 
-        float safeY =
-            collision.collider.bounds.max.y +
-            ballHalfHeight +
-            bottomWallGap;
+        float safeY = collision.collider.bounds.max.y + ballHalfHeight + bottomWallGap;
 
-        Vector2 returnPosition =
-            ballRigidbody.position;
+        Vector2 returnPosition = ballRigidbody.position;
 
         returnPosition.y = safeY;
 
@@ -122,10 +123,7 @@ public class MultiBallProjectile : MonoBehaviour
 
         if (shooter != null)
         {
-            shooter.ProjectileReturned(
-                this,
-                returnPosition
-            );
+            shooter.ProjectileReturned(this, returnPosition);
         }
     }
 
