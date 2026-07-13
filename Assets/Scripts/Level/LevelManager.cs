@@ -331,8 +331,11 @@ public class LevelManager : MonoBehaviour
             }
         }
 
-        remainingBricks =
-            brickSpawner.SpawnSavedLevel(savedGame.bricks);
+        int spawnedSavedBricks = brickSpawner.SpawnSavedLevel(savedGame.bricks);
+
+        int unspawnedBricks = brickSpawner.GetUnspawnedBrickCount();
+
+        remainingBricks = spawnedSavedBricks + unspawnedBricks;
 
         if (remainingBricks == 0)
         {

@@ -411,4 +411,31 @@ public class BrickSpawner : MonoBehaviour
     {
         return nextRowToSpawn;
     }
+
+    public int GetUnspawnedBrickCount()
+    {
+        if (currentLevelBricks == null)
+        {
+            return 0;
+        }
+
+        int unspawnedBrickCount = 0;
+
+        foreach (BrickConfig brickConfig in currentLevelBricks)
+        {
+            if (brickConfig.row < nextRowToSpawn)
+            {
+                continue;
+            }
+
+            if (brickConfig.column >= gridColumns)
+            {
+                continue;
+            }
+
+            unspawnedBrickCount++;
+        }
+
+        return unspawnedBrickCount;
+    }
 }
