@@ -337,3 +337,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hitSound: {fileID: 8300000, guid: 49419e9675bd5984fb81f8aef0dd475d, type: 3}
   volume: 0.6
+  playOnEveryHit: 1
