@@ -435,6 +435,12 @@ MonoBehaviour:
   horizontalOffset: 0.25
   distanceFromSideWalls: 0.08
   fitBricksBetweenWalls: 1
+  halfBrickWidthMultiplier: 0.92
+  halfBrickHeightMultiplier: 0.82
+  halfBrickOffset0: {x: -0.09, y: -0.048}
+  halfBrickOffset90: {x: -0.035, y: -0.045}
+  halfBrickOffset180: {x: -0.04, y: -0.016}
+  halfBrickOffset270: {x: -0.09, y: -0.02}
 --- !u!114 &1138494234
 MonoBehaviour:
   m_ObjectHideFlags: 0

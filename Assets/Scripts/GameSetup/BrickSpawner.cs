@@ -22,6 +22,16 @@ public class BrickSpawner : MonoBehaviour
 
     [SerializeField] private bool fitBricksBetweenWalls = true;
 
+    [Header("Half brick size")]
+    [SerializeField] [Range(0.5f, 1.1f)] private float halfBrickWidthMultiplier;
+    [SerializeField] [Range(0.5f, 1f)] private float halfBrickHeightMultiplier;
+
+    [Header("Half brick offsets")]
+    [SerializeField] private Vector2 halfBrickOffset0;
+    [SerializeField] private Vector2 halfBrickOffset90;
+    [SerializeField] private Vector2 halfBrickOffset180;
+    [SerializeField] private Vector2 halfBrickOffset270;
+
     private List<BrickConfig> currentLevelBricks = new List<BrickConfig>();
 
     private int nextRowToSpawn;
@@ -98,6 +108,11 @@ public class BrickSpawner : MonoBehaviour
             return 0;
         }
 
+        if (!PrepareGrid())
+        {
+            return 0;
+        }
+
         int spawnedBricks = 0;
 
         foreach (SavedBrickData savedBrick in savedBricks)
@@ -114,14 +129,9 @@ public class BrickSpawner : MonoBehaviour
                 continue;
             }
 
-            GameObject newBrick = Instantiate(selectedPrefab, new Vector3(savedBrick.x, savedBrick.y, 0f),
-                Quaternion.identity, bricksParent);
+            Vector3 savedPosition = new Vector3(savedBrick.x, savedBrick.y, 0f);
 
-            Vector3 brickScale = newBrick.transform.localScale;
-
-            brickScale.x *= brickWidthScaleMultiplier;
-
-            newBrick.transform.localScale = brickScale;
+            GameObject newBrick = Instantiate(selectedPrefab, savedPosition, Quaternion.identity, bricksParent);
 
             BrickCollision brickCollision = newBrick.GetComponent<BrickCollision>();
 
@@ -131,9 +141,11 @@ public class BrickSpawner : MonoBehaviour
                 continue;
             }
 
-            newBrick.name = "SavedBrick_" + spawnedBricks;
-
             brickCollision.ConfigureSaved(savedBrick);
+
+            ResizeSpawnedBrick(newBrick, IsHalfBlock(savedBrick.blockType), savedBrick.rotation);
+
+            newBrick.name = "SavedBrick_" + spawnedBricks;
 
             spawnedBricks++;
         }
@@ -261,13 +273,9 @@ public class BrickSpawner : MonoBehaviour
                 continue;
             }
 
-            GameObject newBrick = Instantiate(selectedPrefab, new Vector3(x, y, 0f), Quaternion.identity, bricksParent);
+            Vector3 gridPosition = new Vector3(x, y, 0f);
 
-            Vector3 brickScale = newBrick.transform.localScale;
-
-            brickScale.x *= brickWidthScaleMultiplier;
-
-            newBrick.transform.localScale = brickScale;
+            GameObject newBrick = Instantiate(selectedPrefab, gridPosition, Quaternion.identity, bricksParent);
 
             BrickCollision brickCollision = newBrick.GetComponent<BrickCollision>();
 
@@ -277,10 +285,18 @@ public class BrickSpawner : MonoBehaviour
                 continue;
             }
 
-            newBrick.name = "Brick_" + selectedLevel + "_" + brickConfig.row + "_" + brickConfig.column + "_" +
-                brickConfig.blockType;
+            bool isHalfBlock = IsHalfBlock(brickConfig.blockType);
 
             brickCollision.Configure(brickConfig);
+
+            ResizeSpawnedBrick(newBrick, isHalfBlock, brickConfig.rotation);
+
+            CenterBrickOnGridPosition(newBrick, gridPosition);
+
+            ApplyHalfBrickOffset(newBrick, isHalfBlock, brickConfig.rotation);
+
+            newBrick.name = "Brick_" + selectedLevel + "_" + brickConfig.row + "_" + brickConfig.column + "_" +
+                brickConfig.blockType;
 
             spawnedBricks++;
         }
@@ -290,7 +306,7 @@ public class BrickSpawner : MonoBehaviour
 
     private GameObject GetPrefabForBlockType(string blockType)
     {
-        bool isHalfBlock = !string.IsNullOrWhiteSpace(blockType) && blockType.Trim().ToLowerInvariant() == "half";
+        bool isHalfBlock = IsHalfBlock(blockType);
 
         if (isHalfBlock)
         {
@@ -449,5 +465,120 @@ public class BrickSpawner : MonoBehaviour
         }
 
         return unspawnedBrickCount;
+    }
+
+    private bool IsHalfBlock(string blockType)
+    {
+        return !string.IsNullOrWhiteSpace(blockType) && blockType.Trim().ToLowerInvariant() == "half";
+    }
+
+    private void ResizeSpawnedBrick(GameObject brickObject, bool isHalfBlock, int rotation)
+    {
+        if (brickObject == null)
+        {
+            return;
+        }
+
+        SpriteRenderer spriteRenderer = brickObject.GetComponent<SpriteRenderer>();
+
+        if (spriteRenderer == null || spriteRenderer.sprite == null)
+        {
+            return;
+        }
+
+        Vector2 spriteSize = spriteRenderer.sprite.bounds.size;
+
+        if (spriteSize.x <= 0f || spriteSize.y <= 0f)
+        {
+            return;
+        }
+
+        if (cachedBrickWidth <= 0f || cachedBrickHeight <= 0f)
+        {
+            return;
+        }
+
+        if (!isHalfBlock)
+        {
+            Vector3 fullBrickScale = brickObject.transform.localScale;
+
+            fullBrickScale.x *= brickWidthScaleMultiplier;
+
+            brickObject.transform.localScale = fullBrickScale;
+
+            return;
+        }
+
+        int normalizedRotation = ((rotation % 360) + 360) % 360;
+
+        bool isSideways = normalizedRotation == 90 || normalizedRotation == 270;
+
+        float targetWorldWidth = cachedBrickWidth * halfBrickWidthMultiplier;
+
+        float targetWorldHeight = cachedBrickHeight * halfBrickHeightMultiplier;
+
+        float targetLocalWidth = isSideways ? targetWorldHeight : targetWorldWidth;
+
+        float targetLocalHeight = isSideways ? targetWorldWidth : targetWorldHeight;
+
+        Vector3 halfBrickScale = brickObject.transform.localScale;
+
+        halfBrickScale.x = targetLocalWidth / spriteSize.x;
+
+        halfBrickScale.y = targetLocalHeight / spriteSize.y;
+
+        brickObject.transform.localScale = halfBrickScale;
+    }
+
+    private void CenterBrickOnGridPosition(GameObject brickObject, Vector3 gridPosition)
+    {
+        if (brickObject == null)
+        {
+            return;
+        }
+
+        SpriteRenderer spriteRenderer = brickObject.GetComponent<SpriteRenderer>();
+
+        if (spriteRenderer == null)
+        {
+            return;
+        }
+
+        Vector3 centerOffset = gridPosition - spriteRenderer.bounds.center;
+
+        brickObject.transform.position += centerOffset;
+    }
+
+    private void ApplyHalfBrickOffset(GameObject brickObject, bool isHalfBlock, int rotation)
+    {
+        if (brickObject == null || !isHalfBlock)
+        {
+            return;
+        }
+
+        int normalizedRotation = ((rotation % 360) + 360) % 360;
+
+        Vector2 selectedOffset;
+
+        switch (normalizedRotation)
+        {
+            case 90:
+                selectedOffset = halfBrickOffset90;
+                break;
+
+            case 180:
+                selectedOffset = halfBrickOffset180;
+                break;
+
+            case 270:
+                selectedOffset = halfBrickOffset270;
+                break;
+
+            default:
+                selectedOffset = halfBrickOffset0;
+                break;
+        }
+
+        brickObject.transform.position += new Vector3(selectedOffset.x, selectedOffset.y, 0f);
     }
 }
