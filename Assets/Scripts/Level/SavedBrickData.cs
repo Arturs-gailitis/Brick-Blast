@@ -9,4 +9,5 @@ public class SavedBrickData
     public int score;
     public string blockType;
     public int rotation;
+    public bool isHidden;
 }

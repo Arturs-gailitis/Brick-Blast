@@ -32,6 +32,10 @@ public class BrickSpawner : MonoBehaviour
     [SerializeField] private Vector2 halfBrickOffset180;
     [SerializeField] private Vector2 halfBrickOffset270;
 
+    [Header("Rows behind top wall")]
+    [SerializeField] [Min(0.001f)] private float hiddenRowZOffset = 0.05f;
+    [SerializeField] [Min(0f)] private float revealPositionTolerance = 0.001f;
+
     private List<BrickConfig> currentLevelBricks = new List<BrickConfig>();
 
     private int nextRowToSpawn;
@@ -42,7 +46,10 @@ public class BrickSpawner : MonoBehaviour
     private float cachedFirstBrickY;
     private float cachedBrickWidth;
     private float cachedBrickHeight;
-
+    private float cachedTopWallZ;
+    private float cachedTopWallTopY;
+    private int cachedTopWallSortingLayerId;
+    private int cachedTopWallSortingOrder;
     private bool hasCachedGrid;
 
     private float brickWidthScaleMultiplier = 1f;
@@ -89,14 +96,24 @@ public class BrickSpawner : MonoBehaviour
 
         maxRowInLevel = GetMaxRow(currentLevelBricks);
 
-        int rowsToSpawn = Mathf.Min(visibleRowsAtStart, maxRowInLevel + 1);
+        int visibleRowCount = Mathf.Min(Mathf.Max(1, visibleRowsAtStart), maxRowInLevel + 1);
 
-        for (int visualRow = rowsToSpawn - 1; visualRow >= 0; visualRow--)
+        int spawnedBricks = 0;
+
+        for (int csvRow = 0; csvRow <= maxRowInLevel; csvRow++)
         {
-            SpawnCurrentNextRow(visualRow);
+            int visualRow = visibleRowCount - 1 - csvRow;
+
+            bool startsHidden = csvRow >= visibleRowCount;
+
+            spawnedBricks += SpawnRow(csvRow, visualRow,startsHidden);
         }
 
-        return currentLevelBricks.Count;
+        nextRowToSpawn = maxRowInLevel + 1;
+
+        RefreshRowDepths();
+
+        return spawnedBricks;
     }
 
     public int SpawnSavedLevel(List<SavedBrickData> savedBricks)
@@ -129,7 +146,9 @@ public class BrickSpawner : MonoBehaviour
                 continue;
             }
 
-            Vector3 savedPosition = new Vector3(savedBrick.x, savedBrick.y, 0f);
+            float originalZ = selectedPrefab.transform.position.z;
+
+            Vector3 savedPosition = new Vector3(savedBrick.x, savedBrick.y, originalZ);
 
             GameObject newBrick = Instantiate(selectedPrefab, savedPosition, Quaternion.identity, bricksParent);
 
@@ -145,10 +164,16 @@ public class BrickSpawner : MonoBehaviour
 
             ResizeSpawnedBrick(newBrick, IsHalfBlock(savedBrick.blockType), savedBrick.rotation);
 
+            float revealY = cachedFirstBrickY;
+
+            AddHiddenRowDepth(newBrick, originalZ, revealY, savedBrick.isHidden);
+
             newBrick.name = "SavedBrick_" + spawnedBricks;
 
             spawnedBricks++;
         }
+
+        RefreshRowDepths();
 
         return spawnedBricks;
     }
@@ -164,12 +189,27 @@ public class BrickSpawner : MonoBehaviour
 
         for (int i = 0; i < bricksParent.childCount; i++)
         {
-            BrickCollision brick = bricksParent.GetChild(i).GetComponent<BrickCollision>();
+            Transform brickTransform = bricksParent.GetChild(i);
 
-            if (brick != null)
+            BrickCollision brick = brickTransform.GetComponent<BrickCollision>();
+
+            if (brick == null)
             {
-                savedBricks.Add(brick.CreateSaveData());
+                continue;
             }
+
+            SavedBrickData savedBrick = brick.CreateSaveData();
+
+            if (savedBrick == null)
+            {
+                continue;
+            }
+
+            HiddenRowDepth hiddenRowDepth = brickTransform.GetComponent<HiddenRowDepth>();
+
+            savedBrick.isHidden = hiddenRowDepth != null && hiddenRowDepth.IsHidden;
+
+            savedBricks.Add(savedBrick);
         }
 
         return savedBricks;
@@ -222,31 +262,7 @@ public class BrickSpawner : MonoBehaviour
         }
     }
 
-    public int SpawnNextRowAtTop()
-    {
-        return SpawnCurrentNextRow(0);
-    }
-
-    private int SpawnCurrentNextRow(int visualRow)
-    {
-        if (!hasCachedGrid || currentLevelBricks == null)
-        {
-            return 0;
-        }
-
-        if (nextRowToSpawn > maxRowInLevel)
-        {
-            return 0;
-        }
-
-        int spawnedBricks = SpawnRow(nextRowToSpawn, visualRow);
-
-        nextRowToSpawn++;
-
-        return spawnedBricks;
-    }
-
-    private int SpawnRow(int csvRow, int visualRow)
+    private int SpawnRow(int csvRow, int visualRow, bool startsHidden)
     {
         int spawnedBricks = 0;
 
@@ -273,7 +289,9 @@ public class BrickSpawner : MonoBehaviour
                 continue;
             }
 
-            Vector3 gridPosition = new Vector3(x, y, 0f);
+            float originalZ = selectedPrefab.transform.position.z;
+
+            Vector3 gridPosition = new Vector3(x, y, originalZ);
 
             GameObject newBrick = Instantiate(selectedPrefab, gridPosition, Quaternion.identity, bricksParent);
 
@@ -294,6 +312,12 @@ public class BrickSpawner : MonoBehaviour
             CenterBrickOnGridPosition(newBrick, gridPosition);
 
             ApplyHalfBrickOffset(newBrick, isHalfBlock, brickConfig.rotation);
+
+            float rowObjectOffsetY = newBrick.transform.position.y - gridPosition.y;
+
+            float revealY = cachedFirstBrickY + rowObjectOffsetY;
+
+            AddHiddenRowDepth(newBrick, originalZ, revealY, startsHidden);
 
             newBrick.name = "Brick_" + selectedLevel + "_" + brickConfig.row + "_" + brickConfig.column + "_" +
                 brickConfig.blockType;
@@ -376,6 +400,29 @@ public class BrickSpawner : MonoBehaviour
         cachedFirstBrickX = leftWall.bounds.max.x + distanceFromSideWalls + cachedBrickWidth / 2f + horizontalOffset;
 
         cachedFirstBrickY = topWall.bounds.min.y - distanceFromTopWall - cachedBrickHeight / 2f;
+
+        cachedTopWallZ = topWall.transform.position.z;
+
+        cachedTopWallTopY = topWall.bounds.max.y;
+
+        Renderer topWallRenderer = topWall.GetComponent<Renderer>();
+
+        if (topWallRenderer == null)
+        {
+            topWallRenderer = topWall.GetComponentInChildren<Renderer>();
+        }
+
+        if (topWallRenderer != null)
+        {
+            cachedTopWallSortingLayerId = topWallRenderer.sortingLayerID;
+
+            cachedTopWallSortingOrder = topWallRenderer.sortingOrder;
+        }
+        else
+        {
+            cachedTopWallSortingLayerId = 0;
+            cachedTopWallSortingOrder = 0;
+        }
 
         hasCachedGrid = true;
 
@@ -465,6 +512,44 @@ public class BrickSpawner : MonoBehaviour
         }
 
         return unspawnedBrickCount;
+    }
+
+    public void RefreshRowDepths()
+    {
+        if (bricksParent == null)
+        {
+            return;
+        }
+
+        HiddenRowDepth[] hiddenRows = bricksParent.GetComponentsInChildren<HiddenRowDepth>(true);
+
+        foreach (HiddenRowDepth hiddenRow in hiddenRows)
+        {
+            if (hiddenRow != null)
+            {
+                hiddenRow.RefreshVisibility();
+            }
+        }
+    }
+
+    private void AddHiddenRowDepth(GameObject brickObject, float originalZ, float revealY, bool startsHidden)
+    {
+        if (brickObject == null)
+        {
+            return;
+        }
+
+        HiddenRowDepth hiddenRowDepth = brickObject.GetComponent<HiddenRowDepth>();
+
+        if (hiddenRowDepth == null)
+        {
+            hiddenRowDepth = brickObject.AddComponent<HiddenRowDepth>();
+        }
+
+        float hiddenZ = Mathf.Max(cachedTopWallZ + hiddenRowZOffset, originalZ + hiddenRowZOffset);
+
+        hiddenRowDepth.Initialize(originalZ, hiddenZ, revealY, cachedTopWallTopY, startsHidden,
+            revealPositionTolerance, cachedTopWallSortingLayerId, cachedTopWallSortingOrder - 1);
     }
 
     private bool IsHalfBlock(string blockType)

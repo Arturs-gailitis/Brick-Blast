@@ -9,4 +9,5 @@ public class SavedAbilityData
     public int value;
     public float durationSeconds;
     public int aim;
+    public bool isHidden;
 }

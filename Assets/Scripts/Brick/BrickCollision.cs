@@ -14,6 +14,7 @@ public class BrickCollision : MonoBehaviour
 
     private SpriteRenderer spriteRenderer;
     private bool isDestroyed;
+    private bool gameplayActive = true;
 
     private void Awake()
     {
@@ -36,6 +37,7 @@ public class BrickCollision : MonoBehaviour
         rotation = NormalizeRotation(brickConfig.rotation);
 
         isDestroyed = false;
+        gameplayActive = true;
 
         ApplyRotation();
         UpdateBrickVisuals();
@@ -55,6 +57,7 @@ public class BrickCollision : MonoBehaviour
         rotation = NormalizeRotation(savedBrick.rotation);
 
         isDestroyed = false;
+        gameplayActive = true;
 
         ApplyRotation();
         UpdateBrickVisuals();
@@ -99,7 +102,7 @@ public class BrickCollision : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (isDestroyed || !collision.collider.CompareTag("Player"))
+        if (!gameplayActive || isDestroyed || !collision.collider.CompareTag("Player"))
         {
             return;
         }
@@ -127,7 +130,7 @@ public class BrickCollision : MonoBehaviour
 
     private void TakeBallDamage(int damage)
     {
-        if (isDestroyed)
+        if (!gameplayActive || isDestroyed)
         {
             return;
         }
@@ -147,7 +150,7 @@ public class BrickCollision : MonoBehaviour
 
     public void TakeLaserDamage(int damage)
     {
-        if (isDestroyed)
+        if (!gameplayActive || isDestroyed)
         {
             return;
         }
@@ -163,6 +166,11 @@ public class BrickCollision : MonoBehaviour
         }
 
         UpdateBrickVisuals();
+    }
+
+    public void SetGameplayActive(bool isActive)
+    {
+        gameplayActive = isActive;
     }
 
     private void DestroyBrickAndGiveScore()

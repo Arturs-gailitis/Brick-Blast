@@ -30,6 +30,10 @@ public class AbilitySpawner : MonoBehaviour
     [SerializeField] [Range(0.1f, 1f)] private float powerSizeMultiplier = 0.7f;
     [SerializeField] [Range(0.1f, 1f)] private float directionSizeMultiplier = 0.7f;
 
+    [Header("Rows behind top wall")]
+    [SerializeField] [Min(0.001f)] private float hiddenRowZOffset = 0.05f;
+    [SerializeField] [Min(0f)] private float revealPositionTolerance = 0.001f;
+
     private Transform abilitiesParent;
 
     private List<AbilityConfig> currentLevelAbilities = new List<AbilityConfig>();
@@ -41,6 +45,10 @@ public class AbilitySpawner : MonoBehaviour
     private float cachedFirstCellY;
     private float cachedCellWidth;
     private float cachedCellHeight;
+    private float cachedTopWallZ;
+    private float cachedTopWallTopY;
+    private int cachedTopWallSortingLayerId;
+    private int cachedTopWallSortingOrder;
     private bool hasCachedGrid;
 
     private void Awake()
@@ -77,14 +85,22 @@ public class AbilitySpawner : MonoBehaviour
 
         maxRowInLevel = GetMaxRow(currentLevelAbilities);
 
+        int visibleRowCount = Mathf.Min(Mathf.Max(1, visibleRowsAtStart), maxRowInLevel + 1);
+
         int spawnedAbilities = 0;
 
-        int rowsToSpawn = Mathf.Min(visibleRowsAtStart, maxRowInLevel + 1);
-
-        for (int visualRow = rowsToSpawn - 1; visualRow >= 0; visualRow--)
+        for (int csvRow = 0; csvRow <= maxRowInLevel; csvRow++)
         {
-            spawnedAbilities += SpawnCurrentNextRow(visualRow, selectedLevel);
+            int visualRow = visibleRowCount - 1 - csvRow;
+
+            bool startsHidden = csvRow >= visibleRowCount;
+
+            spawnedAbilities += SpawnRow(csvRow, visualRow, selectedLevel, startsHidden);
         }
+
+        nextRowToSpawn = maxRowInLevel + 1;
+
+        RefreshRowDepths();
 
         return spawnedAbilities;
     }
@@ -188,12 +204,10 @@ public class AbilitySpawner : MonoBehaviour
                     continue;
                 }
 
-                abilityTransforms[i].position = Vector3.Lerp(
-                    startPositions[i],
-                    targetPositions[i],
-                    movePercent
-                );
+                abilityTransforms[i].position = Vector3.Lerp(startPositions[i], targetPositions[i], movePercent);
             }
+
+            RefreshRowDepths();
 
             yield return null;
         }
@@ -207,6 +221,8 @@ public class AbilitySpawner : MonoBehaviour
 
             abilityTransforms[i].position = targetPositions[i];
         }
+
+        RefreshRowDepths();
     }
 
     public void ClearLasers()
@@ -267,8 +283,7 @@ public class AbilitySpawner : MonoBehaviour
             return;
         }
 
-        SpriteRenderer spriteRenderer =
-            abilityObject.GetComponent<SpriteRenderer>();
+        SpriteRenderer spriteRenderer = abilityObject.GetComponent<SpriteRenderer>();
 
         if (spriteRenderer == null || spriteRenderer.sprite == null)
         {
@@ -284,37 +299,24 @@ public class AbilitySpawner : MonoBehaviour
 
         float sizeMultiplier = laserSizeMultiplier;
 
-        if (string.Equals(
-            abilityType,
-            "power",
-            StringComparison.OrdinalIgnoreCase
-        ))
+        if (string.Equals(abilityType, "power", StringComparison.OrdinalIgnoreCase))
         {
             sizeMultiplier = powerSizeMultiplier;
         }
-        else if (string.Equals(
-            abilityType,
-            "direction",
-            StringComparison.OrdinalIgnoreCase
-        ))
+        else if (string.Equals(abilityType, "direction", StringComparison.OrdinalIgnoreCase))
         {
             sizeMultiplier = directionSizeMultiplier;
         }
 
-        float targetSize =
-            Mathf.Min(cellWidth, cellHeight) *
-            sizeMultiplier;
+        float targetSize = Mathf.Min(cellWidth, cellHeight) * sizeMultiplier;
 
-        float spriteLargestSide =
-            Mathf.Max(spriteSize.x, spriteSize.y);
+        float spriteLargestSide = Mathf.Max(spriteSize.x, spriteSize.y);
 
         float scale = targetSize / spriteLargestSide;
 
-        abilityObject.transform.localScale =
-            new Vector3(scale, scale, 1f);
+        abilityObject.transform.localScale = new Vector3(scale, scale, 1f);
 
-        CircleCollider2D circleCollider =
-            abilityObject.GetComponent<CircleCollider2D>();
+        CircleCollider2D circleCollider = abilityObject.GetComponent<CircleCollider2D>();
 
         if (circleCollider != null)
         {
@@ -335,48 +337,43 @@ public class AbilitySpawner : MonoBehaviour
         {
             Transform abilityTransform = abilitiesParent.GetChild(i);
 
+            SavedAbilityData savedAbility = null;
+
             LaserAbility laserAbility = abilityTransform.GetComponent<LaserAbility>();
 
             if (laserAbility != null)
             {
-                SavedAbilityData savedLaser = laserAbility.CreateSaveData();
-
-                if (savedLaser != null)
-                {
-                    savedAbilities.Add(savedLaser);
-                }
-
-                continue;
+                savedAbility = laserAbility.CreateSaveData();
             }
-
-            PowerAbility powerAbility = abilityTransform.GetComponent<PowerAbility>();
-
-            if (powerAbility != null)
+            else
             {
-                SavedAbilityData savedPower = powerAbility.CreateSaveData();
+                PowerAbility powerAbility = abilityTransform.GetComponent<PowerAbility>();
 
-                if (savedPower != null)
+                if (powerAbility != null)
                 {
-                    savedAbilities.Add(savedPower);
+                    savedAbility = powerAbility.CreateSaveData();
                 }
+                else
+                {
+                    DirectionAbility directionAbility = abilityTransform.GetComponent<DirectionAbility>();
 
-                continue;
-                
+                    if (directionAbility != null)
+                    {
+                        savedAbility = directionAbility.CreateSaveData();
+                    }
+                }
             }
 
-            DirectionAbility directionAbility = abilityTransform.GetComponent<DirectionAbility>();
-
-            if (directionAbility != null)
+            if (savedAbility == null)
             {
-                SavedAbilityData savedDirection = directionAbility.CreateSaveData();
-
-                if (savedDirection != null)
-                {
-                    savedAbilities.Add(savedDirection);
-                }
-
                 continue;
             }
+
+            HiddenRowDepth hiddenRowDepth = abilityTransform .GetComponent<HiddenRowDepth>();
+
+            savedAbility.isHidden = hiddenRowDepth != null && hiddenRowDepth.IsHidden;
+
+            savedAbilities.Add(savedAbility);
         }
 
         return savedAbilities;
@@ -391,7 +388,10 @@ public class AbilitySpawner : MonoBehaviour
             return 0;
         }
 
-        TryGetCellSize(out float cellWidth, out float cellHeight);
+        if (!hasCachedGrid && !PrepareGrid())
+        {
+            return 0;
+        }
 
         int spawnedAbilities = 0;
 
@@ -409,40 +409,43 @@ public class AbilitySpawner : MonoBehaviour
                 continue;
             }
 
-            GameObject newAbility = Instantiate(
-                selectedPrefab,
-                new Vector3(savedAbility.x, savedAbility.y, 0f),
-                Quaternion.identity,
-                abilitiesParent
-            );
+            float originalZ = selectedPrefab.transform.position.z;
 
-            if (resizeAbilityToCellSize && cellWidth > 0f && cellHeight > 0f)
+            GameObject newAbility = Instantiate(selectedPrefab, new Vector3(savedAbility.x, savedAbility.y, originalZ),
+                Quaternion.identity, abilitiesParent);
+
+            if (resizeAbilityToCellSize)
             {
-                ResizeAbilityToCellSize(
-                    newAbility,
-                    savedAbility.abilityType,
-                    cellWidth,
-                    cellHeight
-                );
+                ResizeAbilityToCellSize(newAbility, savedAbility.abilityType, cachedCellWidth, cachedCellHeight);
             }
 
             newAbility.name = "Saved_" + savedAbility.abilityType + "_" + spawnedAbilities;
 
             AbilityConfig abilityConfig = new AbilityConfig
             {
-                level = 1,
-                row = 0,
-                column = 0,
-                abilityType = savedAbility.abilityType,
-                value = savedAbility.value,
-                durationSeconds = savedAbility.durationSeconds,
-                aim = savedAbility.aim
+                level = 1, row = 0, column = 0, abilityType = savedAbility.abilityType, value = savedAbility.value,
+                durationSeconds = savedAbility.durationSeconds, aim = savedAbility.aim
             };
 
             ConfigureSpawnedAbility(newAbility, abilityConfig);
 
+            SpriteRenderer spriteRenderer = newAbility.GetComponent<SpriteRenderer>();
+
+            float pivotOffsetY = 0f;
+
+            if (spriteRenderer != null)
+            {
+                pivotOffsetY = newAbility.transform.position.y - spriteRenderer.bounds.center.y;
+            }
+
+            float revealY = cachedFirstCellY + pivotOffsetY;
+
+            AddHiddenRowDepth(newAbility, originalZ, revealY, savedAbility.isHidden);
+
             spawnedAbilities++;
         }
+
+        RefreshRowDepths();
 
         return spawnedAbilities;
     }
@@ -457,8 +460,7 @@ public class AbilitySpawner : MonoBehaviour
             return false;
         }
 
-        SpriteRenderer brickRenderer =
-            brickPrefab.GetComponent<SpriteRenderer>();
+        SpriteRenderer brickRenderer = brickPrefab.GetComponent<SpriteRenderer>();
 
         if (brickRenderer == null || brickRenderer.sprite == null)
         {
@@ -467,42 +469,14 @@ public class AbilitySpawner : MonoBehaviour
 
         Vector2 spriteSize = brickRenderer.sprite.bounds.size;
 
-        cellWidth =
-            spriteSize.x *
-            Mathf.Abs(brickPrefab.transform.localScale.x);
+        cellWidth = spriteSize.x * Mathf.Abs(brickPrefab.transform.localScale.x);
 
-        cellHeight =
-            spriteSize.y *
-            Mathf.Abs(brickPrefab.transform.localScale.y);
+        cellHeight = spriteSize.y * Mathf.Abs(brickPrefab.transform.localScale.y);
 
         return cellWidth > 0f && cellHeight > 0f;
     }
 
-    public int SpawnNextRowAtTop()
-    {
-        return SpawnCurrentNextRow(0, selectedLevel);
-    }
-
-    private int SpawnCurrentNextRow(int visualRow, int levelForName)
-    {
-        if (!hasCachedGrid || currentLevelAbilities == null)
-        {
-            return 0;
-        }
-
-        if (nextRowToSpawn > maxRowInLevel)
-        {
-            return 0;
-        }
-
-        int spawnedAbilities = SpawnRow(nextRowToSpawn, visualRow, levelForName);
-
-        nextRowToSpawn++;
-
-        return spawnedAbilities;
-    }
-
-    private int SpawnRow(int csvRow, int visualRow, int levelForName)
+    private int SpawnRow(int csvRow, int visualRow, int levelForName, bool startsHidden)
     {
         int spawnedAbilities = 0;
 
@@ -518,58 +492,40 @@ public class AbilitySpawner : MonoBehaviour
                 continue;
             }
 
-            GameObject selectedPrefab =
-                GetPrefabForAbility(abilityConfig.abilityType);
+            GameObject selectedPrefab = GetPrefabForAbility(abilityConfig.abilityType);
 
             if (selectedPrefab == null)
             {
                 continue;
             }
 
-            float x =
-                cachedFirstCellX +
-                abilityConfig.column *
-                (cachedCellWidth + horizontalSpacing);
+            float x = cachedFirstCellX + abilityConfig.column * (cachedCellWidth + horizontalSpacing);
 
-            float y =
-                cachedFirstCellY -
-                visualRow *
-                (cachedCellHeight + verticalSpacing);
+            float y = cachedFirstCellY - visualRow * (cachedCellHeight + verticalSpacing);
 
-            Vector3 gridPosition = new Vector3(x, y, 0f);
+            float originalZ = selectedPrefab.transform.position.z;
 
-            GameObject newAbility = Instantiate(
-                selectedPrefab,
-                gridPosition,
-                Quaternion.identity,
-                abilitiesParent
-            );
+            Vector3 gridPosition = new Vector3(x, y, originalZ);
+
+            GameObject newAbility = Instantiate(selectedPrefab, gridPosition, Quaternion.identity, abilitiesParent);
 
             if (resizeAbilityToCellSize)
             {
-                ResizeAbilityToCellSize(
-                    newAbility,
-                    abilityConfig.abilityType,
-                    cachedCellWidth,
-                    cachedCellHeight
-                );
+                ResizeAbilityToCellSize(newAbility, abilityConfig.abilityType, cachedCellWidth, cachedCellHeight);
             }
 
-            CenterAbilityOnGridPosition(
-                newAbility,
-                gridPosition
-            );
+            CenterAbilityOnGridPosition(newAbility, gridPosition);
 
-            newAbility.name =
-                abilityConfig.abilityType + "_" +
-                levelForName + "_" +
-                abilityConfig.row + "_" +
+            float rowObjectOffsetY = newAbility.transform.position.y - gridPosition.y;
+
+            float revealY = cachedFirstCellY + rowObjectOffsetY;
+
+            newAbility.name = abilityConfig.abilityType + "_" + levelForName + "_" + abilityConfig.row + "_" +
                 abilityConfig.column;
 
-            ConfigureSpawnedAbility(
-                newAbility,
-                abilityConfig
-            );
+            ConfigureSpawnedAbility(newAbility, abilityConfig);
+
+            AddHiddenRowDepth(newAbility, originalZ, revealY, startsHidden);
 
             spawnedAbilities++;
         }
@@ -589,14 +545,9 @@ public class AbilitySpawner : MonoBehaviour
             return false;
         }
 
-        float gridWidth =
-            gridColumns * cachedCellWidth +
-            (gridColumns - 1) * horizontalSpacing;
+        float gridWidth = gridColumns * cachedCellWidth + (gridColumns - 1) * horizontalSpacing;
 
-        float availableWidth =
-            rightWall.bounds.min.x -
-            leftWall.bounds.max.x -
-            distanceFromSideWalls * 2f;
+        float availableWidth = rightWall.bounds.min.x - leftWall.bounds.max.x - distanceFromSideWalls * 2f;
 
         if (availableWidth <= 0f)
         {
@@ -605,11 +556,7 @@ public class AbilitySpawner : MonoBehaviour
 
         if (fitGridBetweenWalls)
         {
-            cachedCellWidth =
-                (
-                    availableWidth -
-                    (gridColumns - 1) * horizontalSpacing
-                ) / gridColumns;
+            cachedCellWidth = (availableWidth - (gridColumns - 1) * horizontalSpacing) / gridColumns;
         }
 
         if (gridWidth > availableWidth)
@@ -617,16 +564,32 @@ public class AbilitySpawner : MonoBehaviour
             return false;
         }
 
-        cachedFirstCellX =
-            leftWall.bounds.max.x +
-            distanceFromSideWalls +
-            cachedCellWidth / 2f +
-            horizontalOffset;
+        cachedFirstCellX = leftWall.bounds.max.x + distanceFromSideWalls + cachedCellWidth / 2f + horizontalOffset;
 
-        cachedFirstCellY =
-            topWall.bounds.min.y -
-            distanceFromTopWall -
-            cachedCellHeight / 2f;
+        cachedFirstCellY = topWall.bounds.min.y - distanceFromTopWall - cachedCellHeight / 2f;
+        
+        cachedTopWallZ = topWall.transform.position.z;
+
+        cachedTopWallTopY = topWall.bounds.max.y;
+
+        Renderer topWallRenderer = topWall.GetComponent<Renderer>();
+
+        if (topWallRenderer == null)
+        {
+            topWallRenderer = topWall.GetComponentInChildren<Renderer>();
+        }
+
+        if (topWallRenderer != null)
+        {
+            cachedTopWallSortingLayerId = topWallRenderer.sortingLayerID;
+
+            cachedTopWallSortingOrder = topWallRenderer.sortingOrder;
+        }
+        else
+        {
+            cachedTopWallSortingLayerId = 0;
+            cachedTopWallSortingOrder = 0;
+        }
 
         hasCachedGrid = true;
 
@@ -640,8 +603,7 @@ public class AbilitySpawner : MonoBehaviour
             return;
         }
 
-        SpriteRenderer spriteRenderer =
-            abilityObject.GetComponent<SpriteRenderer>();
+        SpriteRenderer spriteRenderer = abilityObject.GetComponent<SpriteRenderer>();
 
         if (spriteRenderer == null)
         {
@@ -678,11 +640,9 @@ public class AbilitySpawner : MonoBehaviour
             return false;
         }
 
-        currentLevelAbilities =
-            abilityConfigReader.GetAbilitiesForLevel(level);
+        currentLevelAbilities = abilityConfigReader.GetAbilitiesForLevel(level);
 
-        if (currentLevelAbilities == null ||
-            currentLevelAbilities.Count == 0)
+        if (currentLevelAbilities == null || currentLevelAbilities.Count == 0)
         {
             return false;
         }
@@ -694,8 +654,48 @@ public class AbilitySpawner : MonoBehaviour
 
         maxRowInLevel = GetMaxRow(currentLevelAbilities);
 
+        nextRowToSpawn = maxRowInLevel + 1;
+
         return true;
     }
+
+    public void RefreshRowDepths()
+    {
+        if (abilitiesParent == null)
+        {
+            return;
+        }
+
+        HiddenRowDepth[] hiddenRows = abilitiesParent.GetComponentsInChildren<HiddenRowDepth>(true);
+
+        foreach (HiddenRowDepth hiddenRow in hiddenRows)
+        {
+            if (hiddenRow != null)
+            {
+                hiddenRow.RefreshVisibility();
+            }
+        }
+    }
+
+    private void AddHiddenRowDepth(GameObject abilityObject, float originalZ, float revealY, bool startsHidden)
+    {
+        if (abilityObject == null)
+        {
+            return;
+        }
+
+        HiddenRowDepth hiddenRowDepth = abilityObject.GetComponent<HiddenRowDepth>();
+
+        if (hiddenRowDepth == null)
+        {
+            hiddenRowDepth = abilityObject.AddComponent<HiddenRowDepth>();
+        }
+
+        float hiddenZ = Mathf.Max(cachedTopWallZ + hiddenRowZOffset, originalZ + hiddenRowZOffset);
+
+        hiddenRowDepth.Initialize(originalZ, hiddenZ, revealY, cachedTopWallTopY, startsHidden,
+            revealPositionTolerance, cachedTopWallSortingLayerId, cachedTopWallSortingOrder - 1);
+}
 
     public int GetNextRowToSpawn()
     {

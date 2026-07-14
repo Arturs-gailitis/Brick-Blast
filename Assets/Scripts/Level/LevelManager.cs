@@ -115,17 +115,14 @@ public class LevelManager : MonoBehaviour
             return;
         }
 
-        List<SavedAbilityData> savedAbilities = abilitySpawner != null
-            ? abilitySpawner.GetCurrentAbilities()
+        List<SavedAbilityData> savedAbilities = abilitySpawner != null ? abilitySpawner.GetCurrentAbilities()
             : new List<SavedAbilityData>();
 
         SavedGameData savedGame = new SavedGameData
         {
             level = CurrentLevel,
 
-            score = ScoreManager.Instance != null
-                ? ScoreManager.Instance.CurrentScore
-                : 0,
+            score = ScoreManager.Instance != null ? ScoreManager.Instance.CurrentScore : 0,
 
             ball = ball.CreateSaveData(),
             bricks = savedBricks,
@@ -133,12 +130,9 @@ public class LevelManager : MonoBehaviour
             abilitiesWereSaved = true,
             abilities = savedAbilities,
 
-            nextBrickRowToSpawn = brickSpawner != null
-                ? brickSpawner.GetNextRowToSpawn()
-                : visibleRowsAtLevelStart,
+            nextBrickRowToSpawn = brickSpawner != null ? brickSpawner.GetNextRowToSpawn() : visibleRowsAtLevelStart,
 
-            nextAbilityRowToSpawn = abilitySpawner != null
-                ? abilitySpawner.GetNextRowToSpawn()
+            nextAbilityRowToSpawn = abilitySpawner != null ? abilitySpawner.GetNextRowToSpawn()
                 : visibleRowsAtLevelStart,
 
             downMoveCounter = downMoveCounter
@@ -427,8 +421,7 @@ public class LevelManager : MonoBehaviour
     {
         isMovingObjectsDown = true;
 
-        int safeMovesBeforeNewRow =
-            Mathf.Max(1, movesBeforeNewRow);
+        int safeMovesBeforeNewRow = Mathf.Max(1, movesBeforeNewRow);
 
         float moveDownDistance = brickMoveDownDistance;
 
@@ -438,13 +431,11 @@ public class LevelManager : MonoBehaviour
 
             if (rowStep > 0f)
             {
-                moveDownDistance =
-                    rowStep / safeMovesBeforeNewRow;
+                moveDownDistance = rowStep / safeMovesBeforeNewRow;
             }
         }
 
-        BrickCollision[] bricks =
-            FindObjectsByType<BrickCollision>(FindObjectsSortMode.None);
+        BrickCollision[] bricks = FindObjectsByType<BrickCollision>(FindObjectsSortMode.None);
 
         Vector3[] startPositions = new Vector3[bricks.Length];
         Vector3[] targetPositions = new Vector3[bricks.Length];
@@ -453,21 +444,15 @@ public class LevelManager : MonoBehaviour
         {
             startPositions[i] = bricks[i].transform.position;
 
-            targetPositions[i] =
-                startPositions[i] +
-                Vector3.down * moveDownDistance;
+            targetPositions[i] = startPositions[i] + Vector3.down * moveDownDistance;
         }
 
         Coroutine abilityMoveCoroutine = null;
 
         if (abilitySpawner != null)
         {
-            abilityMoveCoroutine = StartCoroutine(
-                abilitySpawner.MoveAllAbilitiesDownSmooth(
-                    moveDownDistance,
-                    brickMoveDownDuration
-                )
-            );
+            abilityMoveCoroutine = StartCoroutine(abilitySpawner.MoveAllAbilitiesDownSmooth(moveDownDistance,
+                    brickMoveDownDuration));
         }
 
         float elapsedTime = 0f;
@@ -476,8 +461,7 @@ public class LevelManager : MonoBehaviour
         {
             elapsedTime += Time.deltaTime;
 
-            float movePercent =
-                Mathf.Clamp01(elapsedTime / brickMoveDownDuration);
+            float movePercent = Mathf.Clamp01(elapsedTime / brickMoveDownDuration);
 
             for (int i = 0; i < bricks.Length; i++)
             {
@@ -486,12 +470,10 @@ public class LevelManager : MonoBehaviour
                     continue;
                 }
 
-                bricks[i].transform.position = Vector3.Lerp(
-                    startPositions[i],
-                    targetPositions[i],
-                    movePercent
-                );
+                bricks[i].transform.position = Vector3.Lerp(startPositions[i], targetPositions[i], movePercent);
             }
+
+            brickSpawner?.RefreshRowDepths();
 
             yield return null;
         }
@@ -506,6 +488,8 @@ public class LevelManager : MonoBehaviour
             bricks[i].transform.position = targetPositions[i];
         }
 
+        brickSpawner?.RefreshRowDepths();
+
         if (abilityMoveCoroutine != null)
         {
             yield return abilityMoveCoroutine;
@@ -515,9 +499,6 @@ public class LevelManager : MonoBehaviour
 
         if (downMoveCounter >= safeMovesBeforeNewRow)
         {
-            brickSpawner?.SpawnNextRowAtTop();
-            abilitySpawner?.SpawnNextRowAtTop();
-
             downMoveCounter = 0;
         }
 
@@ -533,19 +514,13 @@ public class LevelManager : MonoBehaviour
             return;
         }
 
-        float dangerY =
-            bottomWall.bounds.max.y +
-            gameOverDistanceFromBottomWall;
+        float dangerY = bottomWall.bounds.max.y + gameOverDistanceFromBottomWall;
 
-        BrickCollision[] bricks =
-            FindObjectsByType<BrickCollision>(
-                FindObjectsSortMode.None
-            );
+        BrickCollision[] bricks = FindObjectsByType<BrickCollision>(FindObjectsSortMode.None);
 
         foreach (BrickCollision brick in bricks)
         {
-            Collider2D brickCollider =
-                brick.GetComponent<Collider2D>();
+            Collider2D brickCollider = brick.GetComponent<Collider2D>();
 
             if (brickCollider == null)
             {
@@ -651,8 +626,7 @@ public class LevelManager : MonoBehaviour
     {
         if (playerBall == null)
         {
-            playerBall =
-                FindFirstObjectByType<PlayerBallTrajectory>();
+            playerBall = FindFirstObjectByType<PlayerBallTrajectory>();
         }
 
         return playerBall;
@@ -677,10 +651,7 @@ public class LevelManager : MonoBehaviour
 
     private void FindRuntimeBottomWall()
     {
-        Collider2D[] colliders =
-            FindObjectsByType<Collider2D>(
-                FindObjectsSortMode.None
-            );
+        Collider2D[] colliders = FindObjectsByType<Collider2D>(FindObjectsSortMode.None);
 
         foreach (Collider2D collider in colliders)
         {
