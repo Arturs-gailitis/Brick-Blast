@@ -63,8 +63,7 @@ public class AbilitySpawner : MonoBehaviour
             return 0;
         }
 
-        currentLevelAbilities =
-            abilityConfigReader.GetAbilitiesForLevel(level);
+        currentLevelAbilities = abilityConfigReader.GetAbilitiesForLevel(level);
 
         if (currentLevelAbilities.Count == 0)
         {
@@ -80,12 +79,11 @@ public class AbilitySpawner : MonoBehaviour
 
         int spawnedAbilities = 0;
 
-        for (int visualRow = 0; visualRow < visibleRowsAtStart; visualRow++)
+        int rowsToSpawn = Mathf.Min(visibleRowsAtStart, maxRowInLevel + 1);
+
+        for (int visualRow = rowsToSpawn - 1; visualRow >= 0; visualRow--)
         {
-            spawnedAbilities += SpawnCurrentNextRow(
-                visualRow,
-                selectedLevel
-            );
+            spawnedAbilities += SpawnCurrentNextRow(visualRow, selectedLevel);
         }
 
         return spawnedAbilities;

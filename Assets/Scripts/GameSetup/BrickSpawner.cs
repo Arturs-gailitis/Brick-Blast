@@ -79,9 +79,11 @@ public class BrickSpawner : MonoBehaviour
 
         maxRowInLevel = GetMaxRow(currentLevelBricks);
 
-        for (int i = 0; i < visibleRowsAtStart; i++)
+        int rowsToSpawn = Mathf.Min(visibleRowsAtStart, maxRowInLevel + 1);
+
+        for (int visualRow = rowsToSpawn - 1; visualRow >= 0; visualRow--)
         {
-            SpawnCurrentNextRow(nextRowToSpawn);
+            SpawnCurrentNextRow(visualRow);
         }
 
         return currentLevelBricks.Count;
