@@ -300,6 +300,9 @@ MonoBehaviour:
     m_Bits: 200
   wallHitClip: {fileID: 8300000, guid: a0abfa754664bf7428dbace34063ae14, type: 3}
   volume: 0.407
+  wallHitParticlePrefab: {fileID: 5879920553358113598, guid: 0f2ef5b9456696a47bfab0438cb08caf, type: 3}
+  particleWallOffset: 0.02
+  particleDestroyDelay: 0.1
   minimumHitSpeed: 0.1
 --- !u!114 &-7444975383018018280
 MonoBehaviour:
