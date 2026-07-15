@@ -1,16 +1,12 @@
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 
 public class DirectionAbility : MonoBehaviour
 {
-    [Header("Direction text")]
-    [SerializeField] private TMP_Text directionText;
-
     [Header("Ball settings")]
     [SerializeField] private float defaultBallSpeed = 8f;
 
-    private int aim = 1;
+    private int aim = 2;
 
     private readonly HashSet<int> affectedBallIds = new HashSet<int>();
 
@@ -19,16 +15,6 @@ public class DirectionAbility : MonoBehaviour
 
     private MultiBallShooter activeMultiBallShooter;
 
-    private void Awake()
-    {
-        if (directionText == null)
-        {
-            directionText = GetComponentInChildren<TMP_Text>(true);
-        }
-
-        UpdateDirectionText();
-    }
-
     public void Configure(AbilityConfig config)
     {
         if (config == null)
@@ -36,7 +22,14 @@ public class DirectionAbility : MonoBehaviour
             return;
         }
 
-        aim = Mathf.Clamp(config.aim, 1, 8);
+        if (config.aim >= 1 && config.aim <= 3)
+        {
+            aim = config.aim;
+        }
+        else
+        {
+            aim = Random.Range(1, 4);
+        }
 
         affectedBallIds.Clear();
 
@@ -44,8 +37,6 @@ public class DirectionAbility : MonoBehaviour
         isWaitingForMultiBallShotToEnd = false;
 
         UnregisterMultiBallShooter();
-
-        UpdateDirectionText();
     }
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -167,7 +158,6 @@ public class DirectionAbility : MonoBehaviour
         isWaitingForMultiBallShotToEnd = false;
 
         UnregisterMultiBallShooter();
-
         DestroyAbility();
     }
 
@@ -217,55 +207,7 @@ public class DirectionAbility : MonoBehaviour
             abilityCollider.enabled = false;
         }
 
-        if (directionText != null)
-        {
-            directionText.gameObject.SetActive(false);
-        }
-
         Destroy(gameObject);
-    }
-
-    private void UpdateDirectionText()
-    {
-        if (directionText == null)
-        {
-            return;
-        }
-
-        directionText.text = GetDirectionTextFromAim(aim);
-    }
-
-    private string GetDirectionTextFromAim(int selectedAim)
-    {
-        switch (selectedAim)
-        {
-            case 1:
-                return "N";
-
-            case 2:
-                return "NE";
-
-            case 3:
-                return "E";
-
-            case 4:
-                return "SE";
-
-            case 5:
-                return "S";
-
-            case 6:
-                return "SW";
-
-            case 7:
-                return "W";
-
-            case 8:
-                return "NW";
-
-            default:
-                return "N";
-        }
     }
 
     private Vector2 GetDirectionFromAim(int selectedAim)
@@ -273,28 +215,13 @@ public class DirectionAbility : MonoBehaviour
         switch (selectedAim)
         {
             case 1:
-                return Vector2.up;
+                return new Vector2(-1f, 1f).normalized;
 
             case 2:
-                return new Vector2(1f, 1f).normalized;
+                return Vector2.up;
 
             case 3:
-                return Vector2.right;
-
-            case 4:
-                return new Vector2(1f, -1f).normalized;
-
-            case 5:
-                return Vector2.down;
-
-            case 6:
-                return new Vector2(-1f, -1f).normalized;
-
-            case 7:
-                return Vector2.left;
-
-            case 8:
-                return new Vector2(-1f, 1f).normalized;
+                return new Vector2(1f, 1f).normalized;
 
             default:
                 return Vector2.up;
@@ -308,8 +235,10 @@ public class DirectionAbility : MonoBehaviour
             return null;
         }
 
-        return new SavedAbilityData{abilityType = "direction", x = transform.position.x, y = transform.position.y,
-            value = 1, aim = aim};
+        return new SavedAbilityData
+        {
+            abilityType = "direction", x = transform.position.x, y = transform.position.y, value = 1, aim = aim
+        };
     }
 
     private void OnDestroy()
