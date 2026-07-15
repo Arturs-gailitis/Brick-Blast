@@ -12,8 +12,7 @@ public class DirectionAbility : MonoBehaviour
 
     private int aim = 1;
 
-    private readonly HashSet<int> affectedBallIds =
-        new HashSet<int>();
+    private readonly HashSet<int> affectedBallIds = new HashSet<int>();
 
     private bool hasBeenUsedByMainBall;
     private bool isWaitingForMultiBallShotToEnd;
@@ -24,8 +23,7 @@ public class DirectionAbility : MonoBehaviour
     {
         if (directionText == null)
         {
-            directionText =
-                GetComponentInChildren<TMP_Text>(true);
+            directionText = GetComponentInChildren<TMP_Text>(true);
         }
 
         UpdateDirectionText();
@@ -52,8 +50,7 @@ public class DirectionAbility : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        MultiBallProjectile projectile =
-            other.GetComponentInParent<MultiBallProjectile>();
+        MultiBallProjectile projectile = other.GetComponentInParent<MultiBallProjectile>();
 
         if (projectile != null)
         {
@@ -61,8 +58,7 @@ public class DirectionAbility : MonoBehaviour
             return;
         }
 
-        PlayerBallTrajectory mainBall =
-            other.GetComponentInParent<PlayerBallTrajectory>();
+        PlayerBallTrajectory mainBall = other.GetComponentInParent<PlayerBallTrajectory>();
 
         if (mainBall != null)
         {
@@ -70,8 +66,7 @@ public class DirectionAbility : MonoBehaviour
         }
     }
 
-    private void HandleMultiBallProjectile(
-        MultiBallProjectile projectile)
+    private void HandleMultiBallProjectile(MultiBallProjectile projectile)
     {
         int ballId = projectile.GetInstanceID();
 
@@ -80,13 +75,11 @@ public class DirectionAbility : MonoBehaviour
             return;
         }
 
-        Rigidbody2D ballRigidbody =
-            projectile.GetComponent<Rigidbody2D>();
+        Rigidbody2D ballRigidbody = projectile.GetComponent<Rigidbody2D>();
 
         ChangeBallDirection(ballRigidbody);
 
-        PlayerBallTrajectory ownerBall =
-            projectile.OwnerBall;
+        PlayerBallTrajectory ownerBall = projectile.OwnerBall;
 
         if (ownerBall == null)
         {
@@ -94,8 +87,7 @@ public class DirectionAbility : MonoBehaviour
             return;
         }
 
-        MultiBallShooter shooter =
-            ownerBall.GetComponent<MultiBallShooter>();
+        MultiBallShooter shooter = ownerBall.GetComponent<MultiBallShooter>();
 
         if (shooter == null || !shooter.ShotIsActive)
         {
@@ -106,16 +98,14 @@ public class DirectionAbility : MonoBehaviour
         RegisterMultiBallShooter(shooter);
     }
 
-    private void HandleMainBall(
-        PlayerBallTrajectory mainBall)
+    private void HandleMainBall(PlayerBallTrajectory mainBall)
     {
         if (hasBeenUsedByMainBall)
         {
             return;
         }
 
-        MultiBallShooter shooter =
-            mainBall.GetComponent<MultiBallShooter>();
+        MultiBallShooter shooter = mainBall.GetComponent<MultiBallShooter>();
 
         if (shooter != null && shooter.ShotIsActive)
         {
@@ -131,39 +121,33 @@ public class DirectionAbility : MonoBehaviour
 
         hasBeenUsedByMainBall = true;
 
-        Rigidbody2D ballRigidbody =
-            mainBall.GetComponent<Rigidbody2D>();
+        Rigidbody2D ballRigidbody = mainBall.GetComponent<Rigidbody2D>();
 
         ChangeBallDirection(ballRigidbody);
 
         DestroyAbility();
     }
 
-    private void ChangeBallDirection(
-        Rigidbody2D ballRigidbody)
+    private void ChangeBallDirection(Rigidbody2D ballRigidbody)
     {
         if (ballRigidbody == null)
         {
             return;
         }
 
-        Vector2 newDirection =
-            GetDirectionFromAim(aim);
+        Vector2 newDirection = GetDirectionFromAim(aim);
 
-        float currentSpeed =
-            ballRigidbody.linearVelocity.magnitude;
+        float currentSpeed = ballRigidbody.linearVelocity.magnitude;
 
         if (currentSpeed <= 0f)
         {
             currentSpeed = defaultBallSpeed;
         }
 
-        ballRigidbody.linearVelocity =
-            newDirection * currentSpeed;
+        ballRigidbody.linearVelocity = newDirection * currentSpeed;
     }
 
-    private void RegisterMultiBallShooter(
-        MultiBallShooter shooter)
+    private void RegisterMultiBallShooter(MultiBallShooter shooter)
     {
         if (activeMultiBallShooter == shooter)
         {
@@ -175,8 +159,7 @@ public class DirectionAbility : MonoBehaviour
         activeMultiBallShooter = shooter;
         isWaitingForMultiBallShotToEnd = true;
 
-        activeMultiBallShooter.ShotFinished +=
-            HandleMultiBallShotFinished;
+        activeMultiBallShooter.ShotFinished += HandleMultiBallShotFinished;
     }
 
     private void HandleMultiBallShotFinished()
@@ -195,8 +178,7 @@ public class DirectionAbility : MonoBehaviour
             return;
         }
 
-        if (activeMultiBallShooter == null ||
-            !activeMultiBallShooter.ShotIsActive)
+        if (activeMultiBallShooter == null || !activeMultiBallShooter.ShotIsActive)
         {
             isWaitingForMultiBallShotToEnd = false;
 
@@ -212,8 +194,7 @@ public class DirectionAbility : MonoBehaviour
             return;
         }
 
-        activeMultiBallShooter.ShotFinished -=
-            HandleMultiBallShotFinished;
+        activeMultiBallShooter.ShotFinished -= HandleMultiBallShotFinished;
 
         activeMultiBallShooter = null;
     }
@@ -222,16 +203,14 @@ public class DirectionAbility : MonoBehaviour
     {
         UnregisterMultiBallShooter();
 
-        SpriteRenderer spriteRenderer =
-            GetComponent<SpriteRenderer>();
+        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
 
         if (spriteRenderer != null)
         {
             spriteRenderer.enabled = false;
         }
 
-        Collider2D abilityCollider =
-            GetComponent<Collider2D>();
+        Collider2D abilityCollider = GetComponent<Collider2D>();
 
         if (abilityCollider != null)
         {
@@ -253,12 +232,10 @@ public class DirectionAbility : MonoBehaviour
             return;
         }
 
-        directionText.text =
-            GetDirectionTextFromAim(aim);
+        directionText.text = GetDirectionTextFromAim(aim);
     }
 
-    private string GetDirectionTextFromAim(
-        int selectedAim)
+    private string GetDirectionTextFromAim(int selectedAim)
     {
         switch (selectedAim)
         {
@@ -291,8 +268,7 @@ public class DirectionAbility : MonoBehaviour
         }
     }
 
-    private Vector2 GetDirectionFromAim(
-        int selectedAim)
+    private Vector2 GetDirectionFromAim(int selectedAim)
     {
         switch (selectedAim)
         {
@@ -327,21 +303,13 @@ public class DirectionAbility : MonoBehaviour
 
     public SavedAbilityData CreateSaveData()
     {
-        if (hasBeenUsedByMainBall ||
-            isWaitingForMultiBallShotToEnd)
+        if (hasBeenUsedByMainBall || isWaitingForMultiBallShotToEnd)
         {
             return null;
         }
 
-        return new SavedAbilityData
-        {
-            abilityType = "direction",
-            x = transform.position.x,
-            y = transform.position.y,
-            value = 1,
-            durationSeconds = 0f,
-            aim = aim
-        };
+        return new SavedAbilityData{abilityType = "direction", x = transform.position.x, y = transform.position.y,
+            value = 1, aim = aim};
     }
 
     private void OnDestroy()

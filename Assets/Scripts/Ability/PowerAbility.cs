@@ -9,7 +9,6 @@ public class PowerAbility : MonoBehaviour
     [SerializeField] private float previewFontSize = 12f;
 
     public int Value { get; private set; } = 1;
-    public float DurationSeconds { get; private set; }
     public int Aim { get; private set; }
 
     private bool hasBeenUsed;
@@ -28,7 +27,6 @@ public class PowerAbility : MonoBehaviour
         }
 
         Value = Mathf.Max(1, abilityConfig.value);
-        DurationSeconds = Mathf.Max(0f, abilityConfig.durationSeconds);
         Aim = abilityConfig.aim;
 
         FindPreviewTextIfNeeded();
@@ -42,8 +40,7 @@ public class PowerAbility : MonoBehaviour
             return;
         }
 
-        MultiBallProjectile projectile =
-            other.GetComponentInParent<MultiBallProjectile>();
+        MultiBallProjectile projectile = other.GetComponentInParent<MultiBallProjectile>();
 
         if (projectile != null)
         {
@@ -54,8 +51,7 @@ public class PowerAbility : MonoBehaviour
             return;
         }
 
-        PlayerBallTrajectory ballTrajectory =
-            other.GetComponentInParent<PlayerBallTrajectory>();
+        PlayerBallTrajectory ballTrajectory = other.GetComponentInParent<PlayerBallTrajectory>();
 
         if (ballTrajectory == null)
         {
@@ -116,11 +112,8 @@ public class PowerAbility : MonoBehaviour
             parentScaleY = 1f;
         }
 
-        previewText.transform.localScale = new Vector3(
-            previewTextWorldScale / parentScaleX,
-            previewTextWorldScale / parentScaleY,
-            1f
-        );
+        previewText.transform.localScale = new Vector3(previewTextWorldScale / parentScaleX,
+            previewTextWorldScale / parentScaleY, 1f);
     }
 
     private void HideAbilityObject()
@@ -149,14 +142,7 @@ public class PowerAbility : MonoBehaviour
             return null;
         }
 
-        return new SavedAbilityData
-        {
-            abilityType = "power",
-            x = transform.position.x,
-            y = transform.position.y,
-            value = Value,
-            durationSeconds = DurationSeconds,
-            aim = Aim
-        };
+        return new SavedAbilityData{abilityType = "power", x = transform.position.x, y = transform.position.y,
+            value = Value, aim = Aim};
     }
 }

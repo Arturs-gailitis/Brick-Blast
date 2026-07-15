@@ -427,11 +427,8 @@ public class AbilitySpawner : MonoBehaviour
 
             newAbility.name = "Saved_" + savedAbility.abilityType + "_" + spawnedAbilities;
 
-            AbilityConfig abilityConfig = new AbilityConfig
-            {
-                level = 1, row = 0, column = 0, abilityType = savedAbility.abilityType, value = savedAbility.value,
-                durationSeconds = savedAbility.durationSeconds, aim = savedAbility.aim
-            };
+            AbilityConfig abilityConfig = new AbilityConfig{level = 1, row = 0, column = 0,
+                abilityType = savedAbility.abilityType, value = savedAbility.value, aim = savedAbility.aim};
 
             ConfigureSpawnedAbility(newAbility, abilityConfig);
 

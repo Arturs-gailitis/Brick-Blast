@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Globalization;
 using UnityEngine;
@@ -28,31 +27,6 @@ public class AbilityConfigReader : MonoBehaviour
         return levelAbilities;
     }
 
-    public List<AbilityConfig> GetLasersForLevel(int selectedLevel)
-    {
-        LoadCsvIfNeeded();
-
-        List<AbilityConfig> levelLasers = new List<AbilityConfig>();
-
-        foreach (AbilityConfig ability in allAbilities)
-        {
-            if (ability.level == selectedLevel &&
-                string.Equals(ability.abilityType, "laser", StringComparison.OrdinalIgnoreCase))
-            {
-                levelLasers.Add(ability);
-            }
-        }
-
-        return levelLasers;
-    }
-
-    public void ReloadCsv()
-    {
-        isLoaded = false;
-        allAbilities.Clear();
-        LoadCsvIfNeeded();
-    }
-
     private void LoadCsvIfNeeded()
     {
         if (isLoaded)
@@ -80,58 +54,29 @@ public class AbilityConfigReader : MonoBehaviour
 
             string[] values = line.Split(',');
 
-            if (values.Length < 7)
+            if (values.Length < 6)
             {
                 continue;
             }
 
-            bool levelIsValid = int.TryParse(
-                values[0].Trim(),
-                NumberStyles.Integer,
-                CultureInfo.InvariantCulture,
-                out int level
-            );
+            bool levelIsValid = int.TryParse(values[0].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture,
+                out int level);
 
-            bool rowIsValid = int.TryParse(
-                values[1].Trim(),
-                NumberStyles.Integer,
-                CultureInfo.InvariantCulture,
-                out int row
-            );
+            bool rowIsValid = int.TryParse(values[1].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture,
+                out int row);
 
-            bool columnIsValid = int.TryParse(
-                values[2].Trim(),
-                NumberStyles.Integer,
-                CultureInfo.InvariantCulture,
-                out int column
-            );
+            bool columnIsValid = int.TryParse(values[2].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture,
+                out int column);
 
             string abilityType = values[3].Trim();
 
-            bool valueIsValid = int.TryParse(
-                values[4].Trim(),
-                NumberStyles.Integer,
-                CultureInfo.InvariantCulture,
-                out int value
-            );
+            bool valueIsValid = int.TryParse(values[4].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture,
+                out int value);
 
-            bool durationIsValid = float.TryParse(
-                values[5].Trim(),
-                NumberStyles.Float,
-                CultureInfo.InvariantCulture,
-                out float durationSeconds
-            );
+            bool aimIsValid = int.TryParse(values[5].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture,
+                out int aim);
 
-            bool aimIsValid = int.TryParse(
-                values[6].Trim(),
-                NumberStyles.Integer,
-                CultureInfo.InvariantCulture,
-                out int aim
-            );
-
-            bool rowDataIsValid =
-                levelIsValid && rowIsValid && columnIsValid &&
-                valueIsValid && durationIsValid && aimIsValid &&
+            bool rowDataIsValid = levelIsValid && rowIsValid && columnIsValid && valueIsValid && aimIsValid &&
                 !string.IsNullOrWhiteSpace(abilityType);
 
             if (!rowDataIsValid)
@@ -141,13 +86,8 @@ public class AbilityConfigReader : MonoBehaviour
 
             allAbilities.Add(new AbilityConfig
             {
-                level = Mathf.Max(1, level),
-                row = Mathf.Max(0, row),
-                column = Mathf.Max(0, column),
-                abilityType = abilityType,
-                value = value,
-                durationSeconds = Mathf.Max(0f, durationSeconds),
-                aim = aim
+                level = Mathf.Max(1, level), row = Mathf.Max(0, row), column = Mathf.Max(0, column),
+                abilityType = abilityType, value = value, aim = aim
             });
         }
     }

@@ -7,7 +7,6 @@ public class SavedAbilityData
     public float x;
     public float y;
     public int value;
-    public float durationSeconds;
     public int aim;
     public bool isHidden;
 }

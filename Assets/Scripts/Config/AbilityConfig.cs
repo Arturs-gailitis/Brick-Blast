@@ -5,6 +5,5 @@ public class AbilityConfig
     public int column;
     public string abilityType;
     public int value;
-    public float durationSeconds;
     public int aim;
 }
