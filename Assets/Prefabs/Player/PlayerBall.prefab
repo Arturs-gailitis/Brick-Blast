@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 917723103974399941}
   - component: {fileID: 352935097784014177}
   - component: {fileID: -7444975383018018280}
+  - component: {fileID: 4056378998073083198}
   m_Layer: 0
   m_Name: PlayerBall
   m_TagString: Player
@@ -319,6 +320,21 @@ MonoBehaviour:
   shotBallPrefab: {fileID: 6610409304325331122, guid: 95449dd6ed6f0b847a426d6cf90528a4, type: 3}
   ballsPerShot: 10
   distanceBetweenBalls: 0.8
+--- !u!114 &4056378998073083198
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6610409304325331122}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56da454923b285843836ac5a7f157380, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  speedMultiplier: 2
+  minimumDownwardVelocity: 0.05
+  brickCheckPadding: 0.02
 --- !u!1001 &7039711220520819012
 PrefabInstance:
   m_ObjectHideFlags: 0
