@@ -32,6 +32,7 @@ public class PlayerBallTrajectory : MonoBehaviour
     [SerializeField] [Min(1)] private int attackStrength = 1;
 
     public int AttackStrength => Mathf.Max(1, attackStrength);
+    public bool TurnIsActive => turnIsActive;
 
     public float MinimumSideWallVerticalDirection => Mathf.Clamp(minimumVerticalDirection, 0.01f, 0.5f);
 
@@ -476,6 +477,16 @@ public class PlayerBallTrajectory : MonoBehaviour
         }
 
         HideTrajectory();
+    }
+
+    public void SkipCurrentBallFlight()
+    {
+        if (!turnIsActive)
+        {
+            return;
+        }
+
+        ReturnBallToLaunchPosition(true);
     }
 
     public void FinishMultiBallShot(Vector2 finalPosition)
