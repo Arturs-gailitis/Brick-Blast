@@ -5,13 +5,22 @@ using UnityEngine.UI;
 public class SkipBallFlight : MonoBehaviour
 {
     private Button button;
+    private CanvasGroup buttonCanvasGroup;
     private PlayerBallTrajectory playerBall;
 
     private void Awake()
     {
         button = GetComponent<Button>();
+        buttonCanvasGroup = GetComponent<CanvasGroup>();
+
+        if (buttonCanvasGroup == null)
+        {
+            buttonCanvasGroup = gameObject.AddComponent<CanvasGroup>();
+        }
 
         button.onClick.AddListener(SkipBallFlightAction);
+
+        SetButtonVisible(false);
     }
 
     private void Start()
@@ -26,9 +35,23 @@ public class SkipBallFlight : MonoBehaviour
             FindPlayerBall();
         }
 
+        bool ballsAreFlying = playerBall != null && playerBall.TurnIsActive;
+
+        SetButtonVisible(ballsAreFlying);
+    }
+
+    private void SetButtonVisible(bool visible)
+    {
+        if (buttonCanvasGroup != null)
+        {
+            buttonCanvasGroup.alpha = visible ? 1f : 0f;
+            buttonCanvasGroup.interactable = visible;
+            buttonCanvasGroup.blocksRaycasts = visible;
+        }
+
         if (button != null)
         {
-            button.interactable = playerBall != null && playerBall.TurnIsActive;
+            button.interactable = visible;
         }
     }
 
@@ -58,7 +81,7 @@ public class SkipBallFlight : MonoBehaviour
             FindPlayerBall();
         }
 
-        if (playerBall == null)
+        if (playerBall == null || !playerBall.TurnIsActive)
         {
             return;
         }
