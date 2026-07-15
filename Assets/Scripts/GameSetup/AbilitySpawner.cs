@@ -19,10 +19,16 @@ public class AbilitySpawner : MonoBehaviour
     [SerializeField] [Min(1)] private int gridColumns = 7;
     [SerializeField] private float horizontalSpacing;
     [SerializeField] private float verticalSpacing;
-    [SerializeField] private float distanceFromTopWall = 0.5f;
-    [SerializeField] private float horizontalOffset;
     [SerializeField] [Min(0f)] private float distanceFromSideWalls = 0.08f;
     [SerializeField] private bool fitGridBetweenWalls = true;
+
+    [Header("Individual ability position")]
+    [SerializeField] [Min(0f)] private float laserDistanceFromTopWall;
+    [SerializeField] private float laserHorizontalOffset;
+    [SerializeField] [Min(0f)] private float powerDistanceFromTopWall;
+    [SerializeField] private float powerHorizontalOffset;
+    [SerializeField] [Min(0f)] private float directionDistanceFromTopWall;
+    [SerializeField] private float directionHorizontalOffset;
 
     [Header("Ability size")]
     [SerializeField] private bool resizeAbilityToCellSize = true;
@@ -42,7 +48,7 @@ public class AbilitySpawner : MonoBehaviour
     private int selectedLevel = 1;
 
     private float cachedFirstCellX;
-    private float cachedFirstCellY;
+    private float cachedTopWallBottomY;
     private float cachedCellWidth;
     private float cachedCellHeight;
     private float cachedTopWallZ;
@@ -438,7 +444,9 @@ public class AbilitySpawner : MonoBehaviour
                 pivotOffsetY = newAbility.transform.position.y - spriteRenderer.bounds.center.y;
             }
 
-            float revealY = cachedFirstCellY + pivotOffsetY;
+            float firstCellY = GetFirstCellYForAbility(savedAbility.abilityType);
+
+            float revealY = firstCellY + pivotOffsetY;
 
             AddHiddenRowDepth(newAbility, originalZ, revealY, savedAbility.isHidden);
 
@@ -499,9 +507,12 @@ public class AbilitySpawner : MonoBehaviour
                 continue;
             }
 
-            float x = cachedFirstCellX + abilityConfig.column * (cachedCellWidth + horizontalSpacing);
+            float x = cachedFirstCellX + abilityConfig.column * (cachedCellWidth + horizontalSpacing) +
+                GetHorizontalOffsetForAbility(abilityConfig.abilityType);
 
-            float y = cachedFirstCellY - visualRow * (cachedCellHeight + verticalSpacing);
+            float firstCellY = GetFirstCellYForAbility(abilityConfig.abilityType);
+
+            float y = firstCellY - visualRow * (cachedCellHeight + verticalSpacing);
 
             float originalZ = selectedPrefab.transform.position.z;
 
@@ -518,7 +529,7 @@ public class AbilitySpawner : MonoBehaviour
 
             float rowObjectOffsetY = newAbility.transform.position.y - gridPosition.y;
 
-            float revealY = cachedFirstCellY + rowObjectOffsetY;
+            float revealY = firstCellY + rowObjectOffsetY;
 
             newAbility.name = abilityConfig.abilityType + "_" + levelForName + "_" + abilityConfig.row + "_" +
                 abilityConfig.column;
@@ -564,9 +575,9 @@ public class AbilitySpawner : MonoBehaviour
             return false;
         }
 
-        cachedFirstCellX = leftWall.bounds.max.x + distanceFromSideWalls + cachedCellWidth / 2f + horizontalOffset;
+        cachedFirstCellX = leftWall.bounds.max.x + distanceFromSideWalls + cachedCellWidth / 2f;
 
-        cachedFirstCellY = topWall.bounds.min.y - distanceFromTopWall - cachedCellHeight / 2f;
+        cachedTopWallBottomY = topWall.bounds.min.y;
         
         cachedTopWallZ = topWall.transform.position.z;
 
@@ -614,6 +625,41 @@ public class AbilitySpawner : MonoBehaviour
         Vector3 centerOffset = gridPosition - spriteCenter;
 
         abilityObject.transform.position += centerOffset;
+    }
+
+    private float GetDistanceFromTopWallForAbility(string abilityType)
+    {
+        if (string.Equals(abilityType, "power", StringComparison.OrdinalIgnoreCase))
+        {
+            return powerDistanceFromTopWall;
+        }
+
+        if (string.Equals(abilityType, "direction", StringComparison.OrdinalIgnoreCase))
+        {
+            return directionDistanceFromTopWall;
+        }
+
+        return laserDistanceFromTopWall;
+    }
+
+    private float GetHorizontalOffsetForAbility(string abilityType)
+    {
+        if (string.Equals(abilityType, "power", StringComparison.OrdinalIgnoreCase))
+        {
+            return powerHorizontalOffset;
+        }
+
+        if (string.Equals(abilityType, "direction", StringComparison.OrdinalIgnoreCase))
+        {
+            return directionHorizontalOffset;
+        }
+
+        return laserHorizontalOffset;
+    }
+
+    private float GetFirstCellYForAbility(string abilityType)
+    {
+        return cachedTopWallBottomY - GetDistanceFromTopWallForAbility(abilityType) - cachedCellHeight / 2f;
     }
 
     private int GetMaxRow(List<AbilityConfig> abilities)

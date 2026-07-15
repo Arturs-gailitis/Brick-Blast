@@ -533,10 +533,14 @@ MonoBehaviour:
   gridColumns: 7
   horizontalSpacing: -0.05
   verticalSpacing: -0.2
-  distanceFromTopWall: 0.5
-  horizontalOffset: 0.36
   distanceFromSideWalls: 0.16
   fitGridBetweenWalls: 1
+  laserDistanceFromTopWall: 0.58
+  laserHorizontalOffset: 0.31
+  powerDistanceFromTopWall: 0.52
+  powerHorizontalOffset: 0.295
+  directionDistanceFromTopWall: 0.52
+  directionHorizontalOffset: 0.295
   resizeAbilityToCellSize: 1
   laserSizeMultiplier: 0.9
   powerSizeMultiplier: 0.7
