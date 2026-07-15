@@ -432,8 +432,8 @@ MonoBehaviour:
   horizontalSpacing: -0.05
   verticalSpacing: -0.2
   distanceFromTopWall: 0.5
-  horizontalOffset: 0.25
-  distanceFromSideWalls: 0.08
+  horizontalOffset: 0.36
+  distanceFromSideWalls: 0.16
   fitBricksBetweenWalls: 1
   halfBrickWidthMultiplier: 0.92
   halfBrickHeightMultiplier: 0.82
@@ -441,6 +441,8 @@ MonoBehaviour:
   halfBrickOffset90: {x: -0.035, y: -0.045}
   halfBrickOffset180: {x: -0.04, y: -0.016}
   halfBrickOffset270: {x: -0.09, y: -0.02}
+  hiddenRowZOffset: 0.05
+  revealPositionTolerance: 0.001
 --- !u!114 &1138494234
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -532,13 +534,15 @@ MonoBehaviour:
   horizontalSpacing: -0.05
   verticalSpacing: -0.2
   distanceFromTopWall: 0.5
-  horizontalOffset: 0.25
-  distanceFromSideWalls: 0.08
+  horizontalOffset: 0.36
+  distanceFromSideWalls: 0.16
   fitGridBetweenWalls: 1
   resizeAbilityToCellSize: 1
   laserSizeMultiplier: 0.9
   powerSizeMultiplier: 0.7
   directionSizeMultiplier: 0.7
+  hiddenRowZOffset: 0.05
+  revealPositionTolerance: 0.001
 --- !u!114 &1364226576
 MonoBehaviour:
   m_ObjectHideFlags: 0
