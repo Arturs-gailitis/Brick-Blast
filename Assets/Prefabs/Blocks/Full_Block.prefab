@@ -29,7 +29,7 @@ Transform:
   m_GameObject: {fileID: 5845297711985745582}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.42, y: 3.26, z: 0.026261263}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.11459084, y: 0.120436236, z: 1.0212}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -179,6 +179,7 @@ MonoBehaviour:
   health: 3
   score: 0
   blockType: full
+  rotation: 0
   healthText: {fileID: 6425629900885144110}
 --- !u!1001 &2238997974581505525
 PrefabInstance:

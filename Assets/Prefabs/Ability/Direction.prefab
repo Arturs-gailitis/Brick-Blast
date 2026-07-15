@@ -29,7 +29,7 @@ Transform:
   m_GameObject: {fileID: 835050101104889381}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 667.6368, y: 932.40735, z: 2.0171967}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -140,6 +140,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   directionText: {fileID: 3093688682273206575}
+  defaultBallSpeed: 8
 --- !u!114 &2931326733919060976
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -154,6 +155,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hitSound: {fileID: 8300000, guid: 1ab26e0c3f20d1a4a94a3f800e946759, type: 3}
   volume: 0.4
+  playOnEveryHit: 0
 --- !u!1 &7025242715804863509
 GameObject:
   m_ObjectHideFlags: 0
