@@ -5,8 +5,10 @@ public class LaserAbility : MonoBehaviour
 {
     [Header("Aim preview text")]
     [SerializeField] private TMP_Text aimPreviewText;
-    [SerializeField] private float previewTextWorldScale = 0.45f;
-    [SerializeField] private float previewFontSize = 12f;
+    [SerializeField] private float previewTextWorldScale;
+    [SerializeField] private float previewFontSize;
+    [SerializeField] private float previewTextXOffset;
+    [SerializeField] private float previewTextYOffset;
 
     [Header("Laser damage")]
     [SerializeField] private float rowColumnTolerance = 0.35f;
@@ -415,20 +417,25 @@ public class LaserAbility : MonoBehaviour
         }
 
         aimPreviewText.fontSize = previewFontSize;
-
         aimPreviewText.alignment = TextAlignmentOptions.Center;
+        aimPreviewText.margin = Vector4.zero;
 
-        RectTransform rectTransform = aimPreviewText.GetComponent<RectTransform>();
+        RectTransform rectTransform = aimPreviewText.rectTransform;
+        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
 
-        if (rectTransform != null)
+        if (rectTransform == null || spriteRenderer == null)
         {
-            rectTransform.anchoredPosition3D = new Vector3(0f, 0f, -0.05f);
-
-            rectTransform.sizeDelta = new Vector2(20f, 20f);
+            return;
         }
 
-        float parentScaleX = Mathf.Abs(transform.lossyScale.x);
+        rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+        rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+        rectTransform.pivot = new Vector2(0.5f, 0.5f);
 
+        rectTransform.localRotation = Quaternion.identity;
+        rectTransform.sizeDelta = new Vector2(20f, 20f);
+
+        float parentScaleX = Mathf.Abs(transform.lossyScale.x);
         float parentScaleY = Mathf.Abs(transform.lossyScale.y);
 
         if (parentScaleX <= 0f)
@@ -441,8 +448,27 @@ public class LaserAbility : MonoBehaviour
             parentScaleY = 1f;
         }
 
-        aimPreviewText.transform.localScale = new Vector3(previewTextWorldScale / parentScaleX,
+        rectTransform.localScale = new Vector3(previewTextWorldScale / parentScaleX,
             previewTextWorldScale / parentScaleY, 1f);
+
+        Vector3 spriteCenterLocal = transform.InverseTransformPoint(spriteRenderer.bounds.center);
+
+        rectTransform.localPosition = new Vector3(spriteCenterLocal.x, spriteCenterLocal.y, -0.05f);
+
+        aimPreviewText.ForceMeshUpdate();
+
+        Renderer textRenderer = aimPreviewText.GetComponent<Renderer>();
+
+        if (textRenderer != null)
+        {
+            Vector3 centerDifference = spriteRenderer.bounds.center - textRenderer.bounds.center;
+
+            centerDifference.x += previewTextXOffset;
+            centerDifference.y += previewTextYOffset;
+            centerDifference.z = 0f;
+
+            aimPreviewText.transform.position += centerDifference;
+        }
     }
 
     public SavedAbilityData CreateSaveData()
