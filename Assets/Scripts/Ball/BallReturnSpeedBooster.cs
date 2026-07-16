@@ -4,7 +4,7 @@ using UnityEngine;
 public class BallReturnSpeedBooster : MonoBehaviour
 {
     [Header("Speed boost")]
-    [SerializeField] [Min(1f)] private float speedMultiplier;
+    [SerializeField] [Min(0f)] private float speedIncreasePerSecond = 1f;
     [SerializeField] [Min(0f)] private float boostDelay = 1.5f;
 
     [Header("Downward movement check")]
@@ -82,7 +82,9 @@ public class BallReturnSpeedBooster : MonoBehaviour
 
         speedBoostIsActive = true;
 
-        ApplySpeedBoost();
+        float activeBoostTime = boostDelayTimer - boostDelay;
+
+        ApplySpeedBoost(activeBoostTime);
     }
 
     private void FindFlyingBalls()
@@ -161,16 +163,18 @@ public class BallReturnSpeedBooster : MonoBehaviour
         return false;
     }
 
-    private void ApplySpeedBoost()
+    private void ApplySpeedBoost(float activeBoostTime)
     {
-        float safeMultiplier = Mathf.Max(1f, speedMultiplier);
+        float safeSpeedIncreasePerSecond = Mathf.Max(0f, speedIncreasePerSecond);
+
+        float currentSpeedMultiplier = 1f + activeBoostTime * safeSpeedIncreasePerSecond;
 
         foreach (MultiBallProjectile ball in flyingBalls)
         {
             if (ball == null || ball.HasReturned)
             {
                 continue;
-            }
+            }   
 
             Rigidbody2D ballRigidbody = ball.GetComponent<Rigidbody2D>();
 
@@ -189,11 +193,10 @@ public class BallReturnSpeedBooster : MonoBehaviour
             if (!originalBallSpeeds.TryGetValue(ball, out float originalSpeed))
             {
                 originalSpeed = velocity.magnitude;
-
                 originalBallSpeeds[ball] = originalSpeed;
             }
 
-            ballRigidbody.linearVelocity = velocity.normalized * originalSpeed * safeMultiplier;
+            ballRigidbody.linearVelocity = velocity.normalized * originalSpeed * currentSpeedMultiplier;
         }
     }
 
