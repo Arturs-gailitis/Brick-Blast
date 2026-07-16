@@ -14,7 +14,7 @@ public class PlayerBallTrajectory : MonoBehaviour
     [SerializeField] private LayerMask bottomWallLayer;
     [SerializeField] private int maxBounces = 5;
     [SerializeField] private float trajectoryDistance = 100f;
-    [SerializeField] private float rayStartOffset = 0.03f;
+    [SerializeField] private float rayStartOffset;
 
     [Header("Line quality")]
     [SerializeField] [Range(0, 16)] private int cornerSmoothness = 8;
@@ -22,8 +22,8 @@ public class PlayerBallTrajectory : MonoBehaviour
     [SerializeField] [Min(0.01f)] private float minimumAimDistance = 0.35f;
 
     [Header("Ball settings")]
-    [SerializeField] private float ballSpeed = 10f;
-    [SerializeField] private float bottomWallGap = 0.03f;
+    [SerializeField] private float ballSpeed;
+    [SerializeField] private float bottomWallGap;
 
     [Header("Side wall bounce protection")]
     [SerializeField] [Range(0.01f, 0.5f)] private float minimumVerticalDirection = 0.12f;

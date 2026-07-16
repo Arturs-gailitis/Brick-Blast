@@ -34,7 +34,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.05, y: 0.05, z: 1}
+  m_LocalScale: {x: 0.0375, y: 0.0375, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2547210814588365681}
@@ -281,7 +281,7 @@ MonoBehaviour:
   capSmoothness: 6
   minimumAimDistance: 0.35
   ballSpeed: 9
-  bottomWallGap: 0.03
+  bottomWallGap: 0.01
   minimumVerticalDirection: 0.12
   attackStrength: 1
 --- !u!114 &352935097784014177
@@ -332,7 +332,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56da454923b285843836ac5a7f157380, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speedMultiplier: 2
+  speedIncreasePerSecond: 1
+  boostDelay: 1.5
   minimumDownwardVelocity: 0.05
   brickCheckPadding: 0.02
 --- !u!1001 &7039711220520819012

@@ -408,7 +408,7 @@ MonoBehaviour:
   playerBallPrefab: {fileID: 6610409304325331122, guid: c11cf792609faa049aca168385594a95, type: 3}
   bottomWall: {fileID: 6491611517059677051, guid: 7368c9df561ef3c4187f3a48e5d6cb8a, type: 3}
   sideWalls: {fileID: 722885930230346285, guid: 888bfe6078e0ec74eb70c8109e1ee6b4, type: 3}
-  distanceFromWall: 0.05
+  distanceFromWall: 0.01
   insideSideWallMargin: 0.03
 --- !u!114 &1138494233
 MonoBehaviour:
