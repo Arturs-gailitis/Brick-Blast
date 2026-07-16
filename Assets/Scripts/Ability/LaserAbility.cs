@@ -16,6 +16,10 @@ public class LaserAbility : MonoBehaviour
     [SerializeField] private float beamDistance = 20f;
     [SerializeField] private float beamWidth = 0.08f;
 
+    [Header("Vertical laser wall limits")]
+    [SerializeField] private string topWallName = "TopWall";
+    [SerializeField] private string bottomWallName = "ButtomWall";
+
     public int Value { get; private set; } = 1;
     public int Aim { get; private set; } = 1;
 
@@ -23,6 +27,8 @@ public class LaserAbility : MonoBehaviour
     private bool isWaitingForMultiBallShotToEnd;
 
     private MultiBallShooter activeMultiBallShooter;
+    private Collider2D topWallCollider;
+    private Collider2D bottomWallCollider;
 
     private void Awake()
     {
@@ -211,7 +217,59 @@ public class LaserAbility : MonoBehaviour
 
         if (shootVertical)
         {
-            CreateBeam(laserPosition + Vector2.down * beamDistance, laserPosition + Vector2.up * beamDistance);
+            Vector2 startPosition = laserPosition + Vector2.down * beamDistance;
+
+            Vector2 endPosition = laserPosition + Vector2.up * beamDistance;
+
+            if (TryGetVerticalLaserLimits(out float bottomLimitY, out float topLimitY))
+            {
+                startPosition = new Vector2(laserPosition.x, bottomLimitY);
+
+            endPosition = new Vector2(laserPosition.x, topLimitY);
+            }
+
+            CreateBeam(startPosition, endPosition);
+        }
+    }
+
+    private bool TryGetVerticalLaserLimits(out float bottomLimitY, out float topLimitY)
+    {
+        bottomLimitY = 0f;
+        topLimitY = 0f;
+    
+        FindWallCollidersIfNeeded();
+
+        if (topWallCollider == null || bottomWallCollider == null)
+        {
+            return false;
+        }
+
+        bottomLimitY = bottomWallCollider.bounds.center.y;
+        topLimitY = topWallCollider.bounds.center.y;
+
+        return topLimitY > bottomLimitY;
+    }
+
+    private void FindWallCollidersIfNeeded()
+    {
+        if (topWallCollider == null)
+        {
+            GameObject topWall = GameObject.Find(topWallName);
+
+            if (topWall != null)
+            {
+                topWallCollider = topWall.GetComponent<Collider2D>();
+            }
+        }
+
+        if (bottomWallCollider == null)
+        {
+            GameObject bottomWall = GameObject.Find(bottomWallName);
+
+            if (bottomWall != null)
+            {
+                bottomWallCollider = bottomWall.GetComponent<Collider2D>();
+            }
         }
     }
 
@@ -234,7 +292,7 @@ public class LaserAbility : MonoBehaviour
         lineRenderer.numCapVertices = 8;
         lineRenderer.numCornerVertices = 8;
 
-        lineRenderer.sortingOrder = 60;
+        SetBeamBehindWalls(lineRenderer);
 
         lineRenderer.startColor = Color.cyan;
         lineRenderer.endColor = Color.cyan;
@@ -247,6 +305,34 @@ public class LaserAbility : MonoBehaviour
         }
 
         Destroy(beamObject, defaultBeamVisibleSeconds);
+    }
+
+    private void SetBeamBehindWalls(LineRenderer lineRenderer)
+    {
+        FindWallCollidersIfNeeded();
+
+        Renderer wallRenderer = null;
+
+        if (topWallCollider != null)
+        {
+            wallRenderer = topWallCollider.GetComponent<Renderer>();
+        }
+
+        if (wallRenderer == null && bottomWallCollider != null)
+        {
+            wallRenderer = bottomWallCollider.GetComponent<Renderer>();
+        }
+
+        if (wallRenderer != null)
+        {
+            lineRenderer.sortingLayerID = wallRenderer.sortingLayerID;
+
+            lineRenderer.sortingOrder = wallRenderer.sortingOrder - 1;
+
+            return;
+        }
+
+        lineRenderer.sortingOrder = -1;
     }
 
     private void DestroyAbility()
