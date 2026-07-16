@@ -1,12 +1,17 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-[RequireComponent(typeof(Button))]
 public class SkipBallFlight : MonoBehaviour
 {
+    [Header("Button settings")]
+    [SerializeField, Min(0f)] private float showDelay = 1f;
+
     private Button button;
     private CanvasGroup buttonCanvasGroup;
     private PlayerBallTrajectory playerBall;
+
+    private float flightTimer;
+    private bool wasBallsAreFlying;
 
     private void Awake()
     {
@@ -37,7 +42,24 @@ public class SkipBallFlight : MonoBehaviour
 
         bool ballsAreFlying = playerBall != null && playerBall.TurnIsActive;
 
-        SetButtonVisible(ballsAreFlying);
+        if (!ballsAreFlying)
+        {
+            flightTimer = 0f;
+            wasBallsAreFlying = false;
+
+            SetButtonVisible(false);
+            return;
+        }
+
+        if (!wasBallsAreFlying)
+        {
+            flightTimer = 0f;
+            wasBallsAreFlying = true;
+        }
+
+        flightTimer += Time.deltaTime;
+
+        SetButtonVisible(flightTimer >= showDelay);
     }
 
     private void SetButtonVisible(bool visible)
