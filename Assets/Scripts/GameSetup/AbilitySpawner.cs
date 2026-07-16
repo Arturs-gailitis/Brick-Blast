@@ -553,8 +553,6 @@ public class AbilitySpawner : MonoBehaviour
             return false;
         }
 
-        float gridWidth = gridColumns * cachedCellWidth + (gridColumns - 1) * horizontalSpacing;
-
         float availableWidth = rightWall.bounds.min.x - leftWall.bounds.max.x - distanceFromSideWalls * 2f;
 
         if (availableWidth <= 0f)
@@ -565,19 +563,26 @@ public class AbilitySpawner : MonoBehaviour
         if (fitGridBetweenWalls)
         {
             cachedCellWidth = (availableWidth - (gridColumns - 1) * horizontalSpacing) / gridColumns;
-        }
 
-        if (gridWidth > availableWidth)
+            if (cachedCellWidth <= 0f)
+            {
+                return false;
+            }
+        }
+        else
         {
-            return false;
+            float gridWidth = gridColumns * cachedCellWidth + (gridColumns - 1) * horizontalSpacing;
+
+            if (gridWidth > availableWidth)
+            {
+                return false;
+            }
         }
 
         cachedFirstCellX = leftWall.bounds.max.x + distanceFromSideWalls + cachedCellWidth / 2f;
 
         cachedTopWallBottomY = topWall.bounds.min.y;
-        
         cachedTopWallZ = topWall.transform.position.z;
-
         cachedTopWallTopY = topWall.bounds.max.y;
 
         Renderer topWallRenderer = topWall.GetComponent<Renderer>();
@@ -590,7 +595,6 @@ public class AbilitySpawner : MonoBehaviour
         if (topWallRenderer != null)
         {
             cachedTopWallSortingLayerId = topWallRenderer.sortingLayerID;
-
             cachedTopWallSortingOrder = topWallRenderer.sortingOrder;
         }
         else

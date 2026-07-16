@@ -318,8 +318,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   aimPreviewText: {fileID: 1040305845432104473}
   previewTextWorldScale: 0.55
-  previewFontSize: 11
-  previewTextXOffset: -0.014
+  previewFontSize: 7
+  previewTextXOffset: -0.016
   previewTextYOffset: 0.04
   rowColumnTolerance: 0.35
   defaultBeamVisibleSeconds: 0.12
