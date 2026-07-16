@@ -430,17 +430,17 @@ MonoBehaviour:
   - {fileID: 8111543394360099883, guid: 22bb953019d1d3b49b66c04f100b7258, type: 3}
   gridColumns: 7
   horizontalSpacing: -0.05
-  verticalSpacing: -0.2
-  distanceFromTopWall: 0.5
-  horizontalOffset: 0.36
-  distanceFromSideWalls: 0.16
+  verticalSpacing: -0.15
+  distanceFromTopWall: 0.55
+  horizontalOffset: 0.33
+  distanceFromSideWalls: 0.25
   fitBricksBetweenWalls: 1
   halfBrickWidthMultiplier: 0.92
   halfBrickHeightMultiplier: 0.82
-  halfBrickOffset0: {x: -0.09, y: -0.048}
-  halfBrickOffset90: {x: -0.035, y: -0.045}
-  halfBrickOffset180: {x: -0.04, y: -0.016}
-  halfBrickOffset270: {x: -0.09, y: -0.02}
+  halfBrickOffset0: {x: -0.045, y: -0.048}
+  halfBrickOffset90: {x: -0.02, y: -0.035}
+  halfBrickOffset180: {x: -0.04, y: -0.005}
+  halfBrickOffset270: {x: -0.048, y: -0.015}
   hiddenRowZOffset: 0.05
   revealPositionTolerance: 0.001
 --- !u!114 &1138494234
