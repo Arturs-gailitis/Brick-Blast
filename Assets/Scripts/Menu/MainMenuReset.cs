@@ -8,12 +8,23 @@ public class MainMenuResetButton : MonoBehaviour
     [SerializeField] private string gameSceneName = "Game";
 
     private Button resetButton;
+    private UIButtonClickSound buttonClickSound;
     private bool isLoadingScene;
 
     private void Awake()
     {
         resetButton = GetComponent<Button>();
+        buttonClickSound = GetComponent<UIButtonClickSound>();
+
         resetButton.onClick.AddListener(RestartFromFirstLevel);
+    }
+
+    private void Start()
+    {
+        if (buttonClickSound != null)
+        {
+            buttonClickSound.enabled = false;
+        }
     }
 
     private void OnDestroy()
@@ -32,6 +43,12 @@ public class MainMenuResetButton : MonoBehaviour
         }
 
         isLoadingScene = true;
+
+        if (buttonClickSound != null)
+        {
+            buttonClickSound.OnPointerClick(null);
+        }
+
         resetButton.interactable = false;
 
         LevelManager.ResetSavedProgress();
