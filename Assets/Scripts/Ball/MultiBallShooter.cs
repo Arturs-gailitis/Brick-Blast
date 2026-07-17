@@ -12,6 +12,7 @@ public class MultiBallShooter : MonoBehaviour
     [SerializeField] [Min(0.01f)] private float distanceBetweenBalls = 0.8f;
 
     public bool ShotIsActive => shotIsActive;
+    public int BallsPerShot => Mathf.Max(1, ballsPerShot);
 
     public event Action ShotFinished;
 
