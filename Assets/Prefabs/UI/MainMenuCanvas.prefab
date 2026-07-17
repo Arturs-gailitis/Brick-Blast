@@ -500,6 +500,7 @@ GameObject:
   - component: {fileID: 2130369776949993185}
   - component: {fileID: 6303028419958459240}
   - component: {fileID: 7997480016595708784}
+  - component: {fileID: 5790273207581437074}
   m_Layer: 5
   m_Name: PlayButton
   m_TagString: Untagged
@@ -651,6 +652,21 @@ MonoBehaviour:
   resetProgressAfterGameOver: 0
   saveGameBeforeChangingScene: 0
   buttonClickSound: {fileID: 6303028419958459240}
+--- !u!114 &5790273207581437074
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8271655987468823168}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc7bc017436966f4bacfd50c837a2395, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playButtonText: {fileID: 7330715797898172724}
+  defaultText: Play
+  savedGameTextFormat: Continue Level {0}
 --- !u!1 &8988841085192942800
 GameObject:
   m_ObjectHideFlags: 0
