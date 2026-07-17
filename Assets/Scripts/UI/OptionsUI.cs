@@ -1,10 +1,11 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class SettingsUI : MonoBehaviour
+public class OptionsUI : MonoBehaviour
 {
     [Header("UI references")]
-    [SerializeField] private GameObject settingsPanel;
+    [SerializeField] private GameObject optionsPanel;
+
     [SerializeField] private Button retryFromFirstLevelButton;
 
     [Header("Gameplay")]
@@ -18,22 +19,22 @@ public class SettingsUI : MonoBehaviour
             retryFromFirstLevelButton.onClick.AddListener(RetryFromFirstLevel);
         }
 
-        SetSettingsVisible(false);
+        SetOptionsVisible(false);
     }
 
-    public void ToggleSettings()
+    public void ToggleOptions()
     {
-        if (settingsPanel == null)
+        if (optionsPanel == null)
         {
             return;
         }
 
-        SetSettingsVisible(!settingsPanel.activeSelf);
+        SetOptionsVisible(!optionsPanel.activeSelf);
     }
 
-    public void HideSettings()
+    public void HideOptions()
     {
-        SetSettingsVisible(false);
+        SetOptionsVisible(false);
     }
 
     private void RetryFromFirstLevel()
@@ -51,14 +52,14 @@ public class SettingsUI : MonoBehaviour
             LevelManager.Instance.RetryFromFirstLevel();
         }
 
-        SetSettingsVisible(false);
+        SetOptionsVisible(false);
     }
 
-    private void SetSettingsVisible(bool isVisible)
+    private void SetOptionsVisible(bool isVisible)
     {
-        if (settingsPanel != null)
+        if (optionsPanel != null)
         {
-            settingsPanel.SetActive(isVisible);
+            optionsPanel.SetActive(isVisible);
         }
 
         if (playerBall == null || !playerBall.gameObject.scene.IsValid())

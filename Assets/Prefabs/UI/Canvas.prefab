@@ -428,7 +428,7 @@ GameObject:
   - component: {fileID: 1345952384399473453}
   - component: {fileID: 2500485577092804712}
   m_Layer: 5
-  m_Name: SettingsButton
+  m_Name: OptionsButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -535,9 +535,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 5654080615113574840}
-        m_TargetAssemblyTypeName: SettingsUI, Assembly-CSharp
-        m_MethodName: ToggleSettings
+      - m_Target: {fileID: 7370288676076629956}
+        m_TargetAssemblyTypeName: OptionsUI, Assembly-CSharp
+        m_MethodName: ToggleOptions
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -573,7 +573,7 @@ GameObject:
   - component: {fileID: 6396789302916814945}
   - component: {fileID: 6692937326770089022}
   m_Layer: 5
-  m_Name: SettingsText
+  m_Name: OptionsText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -626,7 +626,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Settings
+  m_text: Options
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -793,7 +793,7 @@ GameObject:
   - component: {fileID: 3360827663823482315}
   - component: {fileID: 2268407077459735677}
   - component: {fileID: 6142012016145407808}
-  - component: {fileID: 5654080615113574840}
+  - component: {fileID: 7370288676076629956}
   - component: {fileID: 6467459635182698355}
   m_Layer: 5
   m_Name: Canvas
@@ -1050,7 +1050,7 @@ MonoBehaviour:
   levelCompleteClip: {fileID: 8300000, guid: 606b727d4170adf4d86e90dd3b0a6857, type: 3}
   gameOverClip: {fileID: 8300000, guid: 9bdb680a87e0ec84c86cd8c84dad0e30, type: 3}
   volume: 0.4
---- !u!114 &5654080615113574840
+--- !u!114 &7370288676076629956
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1062,7 +1062,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c37a1a9e7015ec49976284984f84ca4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  settingsPanel: {fileID: 3546337921662359695}
+  optionsPanel: {fileID: 3546337921662359695}
   retryFromFirstLevelButton: {fileID: 8515302874871271485}
   playerBall: {fileID: 917723103974399941, guid: c11cf792609faa049aca168385594a95, type: 3}
 --- !u!114 &6467459635182698355
@@ -1529,7 +1529,7 @@ GameObject:
   - component: {fileID: 3988087244826907836}
   - component: {fileID: 8083282202831368480}
   m_Layer: 5
-  m_Name: SettingsPanel
+  m_Name: OptionsPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2206,9 +2206,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 5654080615113574840}
-        m_TargetAssemblyTypeName: SettingsUI, Assembly-CSharp
-        m_MethodName: HideSettings
+      - m_Target: {fileID: 7370288676076629956}
+        m_TargetAssemblyTypeName: OptionsUI, Assembly-CSharp
+        m_MethodName: HideOptions
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
