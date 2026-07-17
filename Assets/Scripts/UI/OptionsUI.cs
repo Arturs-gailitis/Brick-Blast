@@ -5,8 +5,11 @@ public class OptionsUI : MonoBehaviour
 {
     [Header("UI references")]
     [SerializeField] private GameObject optionsPanel;
+    [SerializeField] private SettingsUI settingsUI;
 
+    [Header("Buttons")]
     [SerializeField] private Button retryFromFirstLevelButton;
+    [SerializeField] private Button openSettingsButton;
 
     [Header("Gameplay")]
     [SerializeField] private PlayerBallTrajectory playerBall;
@@ -19,22 +22,84 @@ public class OptionsUI : MonoBehaviour
             retryFromFirstLevelButton.onClick.AddListener(RetryFromFirstLevel);
         }
 
-        SetOptionsVisible(false);
+        if (openSettingsButton != null)
+        {
+            openSettingsButton.onClick.RemoveAllListeners();
+            openSettingsButton.onClick.AddListener(OpenSettings);
+        }
+
+        if (optionsPanel != null)
+        {
+            optionsPanel.SetActive(false);
+        }
+
+        if (settingsUI != null)
+        {
+            settingsUI.HideSettings();
+        }
+
+        UpdateGameplayInput();
     }
 
     public void ToggleOptions()
     {
-        if (optionsPanel == null)
-        {
-            return;
-        }
+        bool optionsAreVisible = optionsPanel != null && optionsPanel.activeSelf;
 
-        SetOptionsVisible(!optionsPanel.activeSelf);
+        bool settingsAreVisible = settingsUI != null && settingsUI.IsVisible;
+
+        if (optionsAreVisible || settingsAreVisible)
+        {
+            HideAllPanels();
+        }
+        else
+        {
+            ShowOptions();
+        }
     }
 
-    public void HideOptions()
+    public void ShowOptions()
     {
-        SetOptionsVisible(false);
+        if (settingsUI != null)
+        {
+            settingsUI.HideSettings();
+        }
+
+        if (optionsPanel != null)
+        {
+            optionsPanel.SetActive(true);
+        }
+
+        UpdateGameplayInput();
+    }
+
+    public void OpenSettings()
+    {
+        if (optionsPanel != null)
+        {
+            optionsPanel.SetActive(false);
+        }
+
+        if (settingsUI != null)
+        {
+            settingsUI.ShowSettings();
+        }
+
+        UpdateGameplayInput();
+    }
+
+    public void HideAllPanels()
+    {
+        if (optionsPanel != null)
+        {
+            optionsPanel.SetActive(false);
+        }
+
+        if (settingsUI != null)
+        {
+            settingsUI.HideSettings();
+        }
+
+        UpdateGameplayInput();
     }
 
     private void RetryFromFirstLevel()
@@ -52,15 +117,13 @@ public class OptionsUI : MonoBehaviour
             LevelManager.Instance.RetryFromFirstLevel();
         }
 
-        SetOptionsVisible(false);
+        HideAllPanels();
     }
 
-    private void SetOptionsVisible(bool isVisible)
+    private void UpdateGameplayInput()
     {
-        if (optionsPanel != null)
-        {
-            optionsPanel.SetActive(isVisible);
-        }
+        bool menuIsVisible = (optionsPanel != null && optionsPanel.activeSelf) ||
+            (settingsUI != null && settingsUI.IsVisible);
 
         if (playerBall == null || !playerBall.gameObject.scene.IsValid())
         {
@@ -69,7 +132,7 @@ public class OptionsUI : MonoBehaviour
 
         if (playerBall != null)
         {
-            playerBall.SetGameplayInputEnabled(!isVisible);
+            playerBall.SetGameplayInputEnabled(!menuIsVisible);
         }
     }
 }
