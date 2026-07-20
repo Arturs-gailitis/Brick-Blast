@@ -14,9 +14,16 @@ public class LaserAbility : MonoBehaviour
     [SerializeField] private float rowColumnTolerance = 0.35f;
 
     [Header("Laser beam visual")]
-    [SerializeField] private float defaultBeamVisibleSeconds = 0.12f;
     [SerializeField] private float beamDistance = 20f;
     [SerializeField] private float beamWidth = 0.08f;
+    [SerializeField] private Color beamColor = Color.cyan;
+
+    [Header("Laser placeholder animation")]
+    [SerializeField] private float beamFadeInSeconds = 0.035f;
+    [SerializeField] private float beamHoldSeconds = 0.04f;
+    [SerializeField] private float beamFadeOutSeconds = 0.14f;
+    [SerializeField] private float beamStartWidthMultiplier = 0.2f;
+    [SerializeField] private float beamFlashWidthMultiplier = 1.8f;
 
     [Header("Vertical laser wall limits")]
     [SerializeField] private string topWallName = "TopWall";
@@ -285,28 +292,36 @@ public class LaserAbility : MonoBehaviour
         lineRenderer.positionCount = 2;
 
         lineRenderer.SetPosition(0, startPosition);
-
         lineRenderer.SetPosition(1, endPosition);
 
-        lineRenderer.startWidth = beamWidth;
-        lineRenderer.endWidth = beamWidth;
+        lineRenderer.startWidth = beamWidth * beamStartWidthMultiplier;
+        lineRenderer.endWidth = beamWidth * beamStartWidthMultiplier;
 
         lineRenderer.numCapVertices = 8;
         lineRenderer.numCornerVertices = 8;
 
         SetBeamBehindWalls(lineRenderer);
 
-        lineRenderer.startColor = Color.cyan;
-        lineRenderer.endColor = Color.cyan;
+        Color invisibleBeamColor = beamColor;
+        invisibleBeamColor.a = 0f;
+
+        lineRenderer.startColor = invisibleBeamColor;
+        lineRenderer.endColor = invisibleBeamColor;
+
+        Material runtimeMaterial = null;
 
         Shader shader = Shader.Find("Sprites/Default");
 
         if (shader != null)
         {
-            lineRenderer.material = new Material(shader);
+            runtimeMaterial = new Material(shader);
+            lineRenderer.material = runtimeMaterial;
         }
 
-        Destroy(beamObject, defaultBeamVisibleSeconds);
+        LaserBeamAnimation beamAnimation = beamObject.AddComponent<LaserBeamAnimation>();
+
+        beamAnimation.Play(lineRenderer, runtimeMaterial, beamColor, beamWidth, beamFadeInSeconds, beamHoldSeconds,
+            beamFadeOutSeconds, beamStartWidthMultiplier, beamFlashWidthMultiplier);
     }
 
     private void SetBeamBehindWalls(LineRenderer lineRenderer)
