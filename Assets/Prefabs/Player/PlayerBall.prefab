@@ -454,7 +454,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   maxBounces: 5
-  trajectoryDistance: 100
+  trajectoryDistance: 12
+  fadeStartDistance: 7
   rayStartOffset: 0.05
   cornerSmoothness: 8
   capSmoothness: 6
@@ -532,7 +533,6 @@ MonoBehaviour:
   ballCountText: {fileID: 7891817982885891931}
   countPrefix: x
   textGapFromBall: 6
-  textHeightOffset: 0
   rightWallSwitchDistance: 0.4
 --- !u!1001 &7039711220520819012
 PrefabInstance:

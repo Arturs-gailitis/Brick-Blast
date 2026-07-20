@@ -13,7 +13,8 @@ public class PlayerBallTrajectory : MonoBehaviour
     [SerializeField] private LayerMask wallLayer;
     [SerializeField] private LayerMask bottomWallLayer;
     [SerializeField] private int maxBounces = 5;
-    [SerializeField] private float trajectoryDistance = 100f;
+    [SerializeField] [Min(0.1f)] private float trajectoryDistance = 12f;
+    [SerializeField] [Min(0f)] private float fadeStartDistance = 7f;
     [SerializeField] private float rayStartOffset;
 
     [Header("Line quality")]
@@ -42,6 +43,7 @@ public class PlayerBallTrajectory : MonoBehaviour
     private CircleCollider2D ballCollider;
     private Camera mainCamera;
     private MultiBallShooter multiBallShooter;
+    private Color trajectoryColor = Color.white;
 
     private bool canShoot = true;
     private bool turnIsActive;
@@ -68,6 +70,11 @@ public class PlayerBallTrajectory : MonoBehaviour
         ballRigidbody = GetComponent<Rigidbody2D>();
         ballCollider = GetComponent<CircleCollider2D>();
         mainCamera = Camera.main;
+
+        if (lineRenderer != null)
+        {
+            trajectoryColor = lineRenderer.startColor;
+        }
 
         ballRigidbody.gravityScale = 0f;
         ballRigidbody.linearVelocity = Vector2.zero;
@@ -330,31 +337,65 @@ public class PlayerBallTrajectory : MonoBehaviour
 
     private void DrawTrajectory(Vector2 startDirection)
     {
+        if (lineRenderer == null)
+        {
+            return;
+        }
+
         List<Vector3> trajectoryPoints = new List<Vector3>(maxBounces + 2);
 
-        trajectoryPoints.Add(ballRigidbody.position);
+        Vector2 firstPoint = ballRigidbody.position;
+
+        trajectoryPoints.Add(firstPoint);
 
         float ballRadius = ballCollider.bounds.extents.x;
+        float maximumDistance = Mathf.Max(0.1f, trajectoryDistance);
+        float travelledDistance = 0f;
 
-        Vector2 currentPosition = ballRigidbody.position + startDirection * rayStartOffset;
-
+        Vector2 lastLinePoint = firstPoint;
+        Vector2 currentPosition = firstPoint + startDirection * rayStartOffset;
         Vector2 currentDirection = startDirection;
 
         for (int i = 0; i < maxBounces; i++)
         {
-            RaycastHit2D hit = Physics2D.CircleCast(currentPosition, ballRadius, currentDirection, trajectoryDistance,
-                    wallLayer);
+            float remainingDistance = maximumDistance - travelledDistance;
 
-            if (hit.collider == null)
+            if (remainingDistance <= 0.001f)
             {
-                trajectoryPoints.Add(currentPosition + currentDirection * trajectoryDistance);
-
                 break;
             }
 
-            Vector2 bounceCenter = hit.centroid;
+            RaycastHit2D hit = Physics2D.CircleCast(currentPosition, ballRadius, currentDirection, remainingDistance, wallLayer);
 
-            trajectoryPoints.Add(hit.point);
+            Vector2 nextLinePoint;
+
+            if (hit.collider == null)
+            {
+                nextLinePoint = currentPosition + currentDirection * remainingDistance;
+            }
+            else
+            {
+                nextLinePoint = hit.point;
+            }
+
+            float segmentDistance = Vector2.Distance(lastLinePoint, nextLinePoint);
+
+            if (segmentDistance > remainingDistance)
+            {
+                nextLinePoint = Vector2.MoveTowards(lastLinePoint, nextLinePoint, remainingDistance);
+
+                segmentDistance = remainingDistance;
+            }
+
+            trajectoryPoints.Add(nextLinePoint);
+
+            travelledDistance += segmentDistance;
+            lastLinePoint = nextLinePoint;
+
+            if (hit.collider == null || travelledDistance >= maximumDistance - 0.001f)
+            {
+                break;
+            }
 
             if (IsBottomWall(hit.collider.gameObject.layer))
             {
@@ -370,17 +411,43 @@ public class PlayerBallTrajectory : MonoBehaviour
                 currentDirection = CorrectTooHorizontalDirection(currentDirection);
             }
 
-            currentPosition = bounceCenter + currentDirection * rayStartOffset;
-        }
-
-        if (lineRenderer == null)
-        {
-            return;
+            currentPosition = hit.centroid + currentDirection * rayStartOffset;
         }
 
         lineRenderer.positionCount = trajectoryPoints.Count;
-
         lineRenderer.SetPositions(trajectoryPoints.ToArray());
+
+        ApplyTrajectoryFade(travelledDistance);
+    }
+
+    private void ApplyTrajectoryFade(float totalDistance)
+    {
+        float safeTotalDistance = Mathf.Max(0.001f, totalDistance);
+
+        float safeFadeStartDistance = Mathf.Clamp(fadeStartDistance, 0f, safeTotalDistance);
+
+        float fadeStartTime = safeFadeStartDistance / safeTotalDistance;
+
+        Gradient trajectoryGradient = new Gradient();
+
+        GradientColorKey[] colorKeys = {new GradientColorKey(trajectoryColor, 0f), new GradientColorKey(trajectoryColor, 1f)};
+
+        GradientAlphaKey[] alphaKeys;
+
+        if (fadeStartTime >= 0.999f)
+        {
+            alphaKeys = new[] {new GradientAlphaKey(trajectoryColor.a, 0f), new GradientAlphaKey(trajectoryColor.a, 0.999f),
+            new GradientAlphaKey(0f, 1f)};
+        }
+        else
+        {
+            alphaKeys = new[] {new GradientAlphaKey(trajectoryColor.a, 0f),
+                new GradientAlphaKey(trajectoryColor.a, fadeStartTime), new GradientAlphaKey(0f, 1f)};
+        }
+
+        trajectoryGradient.SetKeys(colorKeys, alphaKeys);
+
+        lineRenderer.colorGradient = trajectoryGradient;
     }
 
     private Vector2 CorrectTooHorizontalDirection(Vector2 direction)
