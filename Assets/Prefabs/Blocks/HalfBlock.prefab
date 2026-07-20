@@ -230,8 +230,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2143387c22a31db44ad072dca90b192e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  destroyEffectPrefab: {fileID: 6953888718684480362, guid: 51f3bfd760476124e92543b2cdef809d, type: 3}
-  effectScale: 0.5
+  destroyEffectPrefab: {fileID: 6813416509558619124, guid: 3b7f2c753d435d647a80f1f047a113e3, type: 3}
+  effectScale: 0.05
   extraLifetime: 0.5
   placeAboveBrick: 1
   sortingOrderOffset: 5

@@ -4,7 +4,7 @@ public class BrickDestroyEffect : MonoBehaviour
 {
     [Header("Destroy effect")]
     [SerializeField] private GameObject destroyEffectPrefab;
-    [SerializeField] [Min(0.1f)] private float effectScale = 1.6f;
+    [SerializeField] private float effectScale = 1.6f;
     [SerializeField] [Min(0f)] private float extraLifetime = 0.5f;
 
     [Header("Visual settings")]
