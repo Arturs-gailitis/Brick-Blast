@@ -13,12 +13,14 @@ public class BrickCollision : MonoBehaviour
     [SerializeField] private TMP_Text healthText;
 
     private SpriteRenderer spriteRenderer;
+    private BrickBumpAnimation brickBumpAnimation;
     private bool isDestroyed;
     private bool gameplayActive = true;
 
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        brickBumpAnimation = GetComponent<BrickBumpAnimation>();
 
         UpdateBrickVisuals();
     }
@@ -126,6 +128,11 @@ public class BrickCollision : MonoBehaviour
         }
 
         TakeBallDamage(ballDamage);
+
+        if (!isDestroyed && brickBumpAnimation != null)
+        {
+            brickBumpAnimation.Play(collision);
+        }
     }
 
     private void TakeBallDamage(int damage)

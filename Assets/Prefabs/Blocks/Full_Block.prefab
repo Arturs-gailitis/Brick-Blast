@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1918968965773507177}
   - component: {fileID: 4238397076549453696}
   - component: {fileID: 8223395169878121614}
+  - component: {fileID: 5002445674266181939}
   m_Layer: 7
   m_Name: Full_Block
   m_TagString: Untagged
@@ -181,6 +182,23 @@ MonoBehaviour:
   blockType: full
   rotation: 0
   healthText: {fileID: 6425629900885144110}
+--- !u!114 &5002445674266181939
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5845297711985745582}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd6393a605d3b1647860ccb1e178ce20, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  healthText: {fileID: 6425629900885144110}
+  bumpDistance: 0.05
+  bumpMoveDuration: 0.04
+  bumpReturnDuration: 0.09
+  bumpScaleMultiplier: 0.98
 --- !u!1001 &2238997974581505525
 PrefabInstance:
   m_ObjectHideFlags: 0
