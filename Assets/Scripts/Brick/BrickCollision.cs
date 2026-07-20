@@ -14,6 +14,8 @@ public class BrickCollision : MonoBehaviour
 
     private SpriteRenderer spriteRenderer;
     private BrickBumpAnimation brickBumpAnimation;
+    private BrickDestroyEffect brickDestroyEffect;
+
     private bool isDestroyed;
     private bool gameplayActive = true;
 
@@ -21,6 +23,7 @@ public class BrickCollision : MonoBehaviour
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
         brickBumpAnimation = GetComponent<BrickBumpAnimation>();
+        brickDestroyEffect = GetComponent<BrickDestroyEffect>();
 
         UpdateBrickVisuals();
     }
@@ -197,6 +200,11 @@ public class BrickCollision : MonoBehaviour
         if (LevelManager.Instance != null)
         {
             LevelManager.Instance.BrickDestroyed();
+        }
+
+        if (brickDestroyEffect != null)
+        {
+            brickDestroyEffect.Play();
         }
 
         Destroy(gameObject);
