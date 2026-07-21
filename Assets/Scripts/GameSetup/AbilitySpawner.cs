@@ -9,6 +9,7 @@ public class AbilitySpawner : MonoBehaviour
     [SerializeField] private GameObject laserPrefab;
     [SerializeField] private GameObject powerPrefab;
     [SerializeField] private GameObject directionPrefab;
+    [SerializeField] private GameObject tripleBallPrefab;
     [SerializeField] private AbilityConfigReader abilityConfigReader;
     [SerializeField] private GameObject brickPrefab;
 
@@ -29,12 +30,15 @@ public class AbilitySpawner : MonoBehaviour
     [SerializeField] private float powerHorizontalOffset;
     [SerializeField] [Min(0f)] private float directionDistanceFromTopWall;
     [SerializeField] private float directionHorizontalOffset;
+    [SerializeField] [Min(0f)] private float tripleBallDistanceFromTopWall;
+    [SerializeField] private float tripleBallHorizontalOffset;
 
     [Header("Ability size")]
     [SerializeField] private bool resizeAbilityToCellSize = true;
     [SerializeField] [Range(0.1f, 1f)] private float laserSizeMultiplier = 0.9f;
     [SerializeField] [Range(0.1f, 1f)] private float powerSizeMultiplier = 0.7f;
     [SerializeField] [Range(0.1f, 1f)] private float directionSizeMultiplier = 0.7f;
+    [SerializeField] [Range(0.1f, 1f)] private float tripleBallSizeMultiplier = 0.7f;
 
     [Header("Rows behind top wall")]
     [SerializeField] [Min(0.001f)] private float hiddenRowZOffset = 0.05f;
@@ -128,6 +132,11 @@ public class AbilitySpawner : MonoBehaviour
             return directionPrefab;
         }
 
+        if (string.Equals(abilityType, "triple", StringComparison.OrdinalIgnoreCase))
+        {
+            return tripleBallPrefab;
+        }
+
         return null;
     }
 
@@ -167,6 +176,18 @@ public class AbilitySpawner : MonoBehaviour
             if (directionAbility != null)
             {
                 directionAbility.Configure(abilityConfig);
+            }
+
+            return;
+        }
+
+        if (string.Equals(abilityConfig.abilityType, "triple", StringComparison.OrdinalIgnoreCase))
+        {
+            TripleBallAbility tripleBallAbility = abilityObject.GetComponent<TripleBallAbility>();
+
+            if (tripleBallAbility != null)
+            {
+                tripleBallAbility.Configure(abilityConfig);
             }
 
             return;
@@ -313,6 +334,10 @@ public class AbilitySpawner : MonoBehaviour
         {
             sizeMultiplier = directionSizeMultiplier;
         }
+        else if (string.Equals(abilityType, "triple", StringComparison.OrdinalIgnoreCase))
+        {
+            sizeMultiplier = tripleBallSizeMultiplier;
+        }
 
         float targetSize = Mathf.Min(cellWidth, cellHeight) * sizeMultiplier;
 
@@ -366,6 +391,15 @@ public class AbilitySpawner : MonoBehaviour
                     if (directionAbility != null)
                     {
                         savedAbility = directionAbility.CreateSaveData();
+                    }
+                    else
+                    {
+                        TripleBallAbility tripleBallAbility = abilityTransform.GetComponent<TripleBallAbility>();
+
+                        if (tripleBallAbility != null)
+                        {
+                            savedAbility = tripleBallAbility.CreateSaveData();
+                        }
                     }
                 }
             }
@@ -640,6 +674,11 @@ public class AbilitySpawner : MonoBehaviour
             return directionDistanceFromTopWall;
         }
 
+        if (string.Equals(abilityType, "triple", StringComparison.OrdinalIgnoreCase))
+        {
+            return tripleBallDistanceFromTopWall;
+        }
+
         return laserDistanceFromTopWall;
     }
 
@@ -653,6 +692,11 @@ public class AbilitySpawner : MonoBehaviour
         if (string.Equals(abilityType, "direction", StringComparison.OrdinalIgnoreCase))
         {
             return directionHorizontalOffset;
+        }
+
+        if (string.Equals(abilityType, "triple", StringComparison.OrdinalIgnoreCase))
+        {
+            return tripleBallHorizontalOffset;
         }
 
         return laserHorizontalOffset;

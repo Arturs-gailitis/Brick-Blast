@@ -507,6 +507,8 @@ MonoBehaviour:
   visibleRowsAtLevelStart: 3
   movesBeforeNewRow: 1
   gameOverDistanceFromBottomWall: 0.6
+  fullyClearedRowsToMove: 3
+  fullyClearedBallMultiplier: 3
 --- !u!1 &1364226574
 GameObject:
   m_ObjectHideFlags: 0
@@ -540,6 +542,7 @@ MonoBehaviour:
   laserPrefab: {fileID: 4656815003314491021, guid: a4bf4f28491880449ad50d624af6e7a5, type: 3}
   powerPrefab: {fileID: 8401951411293255244, guid: 7e9f70f4a80daa841bd199732a55a68f, type: 3}
   directionPrefab: {fileID: 835050101104889381, guid: a391de1fbbf98ff42af103d2aa96d2c2, type: 3}
+  tripleBallPrefab: {fileID: 8401951411293255244, guid: 2841e339f0b5c9942ac6d3fd05a78bfb, type: 3}
   abilityConfigReader: {fileID: 1364226576}
   brickPrefab: {fileID: 5845297711985745582, guid: dfcf4fde16325424ca57f3a31383abcf, type: 3}
   walls:
@@ -556,10 +559,13 @@ MonoBehaviour:
   powerHorizontalOffset: 0.295
   directionDistanceFromTopWall: 0.58
   directionHorizontalOffset: 0.295
+  tripleBallDistanceFromTopWall: 0.58
+  tripleBallHorizontalOffset: 0.295
   resizeAbilityToCellSize: 1
   laserSizeMultiplier: 0.9
   powerSizeMultiplier: 0.7
   directionSizeMultiplier: 0.7
+  tripleBallSizeMultiplier: 0.7
   hiddenRowZOffset: 0.05
   revealPositionTolerance: 0.001
 --- !u!114 &1364226576

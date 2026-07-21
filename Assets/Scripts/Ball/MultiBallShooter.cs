@@ -136,7 +136,7 @@ public class MultiBallShooter : MonoBehaviour
 
         int safeBallCount = Mathf.Max(1, currentShotBallCount);
 
-        SpawnBall(currentDirection, currentBallSpeed, currentBottomWallLayer, currentBottomWallGap);
+        SpawnBall(launchPosition, currentDirection, currentBallSpeed, currentBottomWallLayer, currentBottomWallGap);
 
         spawnedBallCount++;
 
@@ -148,16 +148,60 @@ public class MultiBallShooter : MonoBehaviour
         }
     }
 
-    private void SpawnBall(Vector2 direction, float ballSpeed, LayerMask bottomWallLayer, float bottomWallGap)
+    public List<MultiBallProjectile> SpawnAbilityBalls(Vector2 spawnPosition, int ballCount)
     {
-        GameObject spawnedObject = Instantiate(shotBallPrefab, launchPosition, transform.rotation);
+        List<MultiBallProjectile> spawnedBalls = new List<MultiBallProjectile>();
+
+        if (!shotIsActive || shotBallPrefab == null)
+        {
+            return spawnedBalls;
+        }
+
+        int safeBallCount = Mathf.Max(1, ballCount);
+
+        for (int i = 0; i < safeBallCount; i++)
+        {
+            Vector2 direction = GetUpwardFanDirection(i, safeBallCount);
+
+            MultiBallProjectile spawnedBall = SpawnBall(spawnPosition, direction, currentBallSpeed, currentBottomWallLayer,
+                currentBottomWallGap);
+
+            if (spawnedBall != null)
+            {
+                spawnedBalls.Add(spawnedBall);
+            }
+        }
+
+        return spawnedBalls;
+    }
+
+    private Vector2 GetUpwardFanDirection(int ballIndex, int ballCount)
+    {
+        if (ballCount <= 1)
+        {
+            return Vector2.up;
+        }
+
+        float directionPercent = ballIndex / (float)(ballCount - 1);
+
+        float angleInDegrees = Mathf.Lerp(135f, 45f, directionPercent);
+
+        float angleInRadians = angleInDegrees * Mathf.Deg2Rad;
+
+        return new Vector2(Mathf.Cos(angleInRadians), Mathf.Sin(angleInRadians)).normalized;
+    }
+
+    private MultiBallProjectile SpawnBall(Vector2 spawnPosition, Vector2 direction, float ballSpeed, LayerMask bottomWallLayer,
+        float bottomWallGap)
+    {
+        GameObject spawnedObject = Instantiate(shotBallPrefab, spawnPosition, transform.rotation);
 
         MultiBallProjectile projectile = spawnedObject.GetComponent<MultiBallProjectile>();
 
         if (projectile == null)
         {
             Destroy(spawnedObject);
-            return;
+            return null;
         }
 
         Collider2D projectileCollider = spawnedObject.GetComponent<Collider2D>();
@@ -188,6 +232,8 @@ public class MultiBallShooter : MonoBehaviour
         activeBalls.Add(projectile);
 
         projectile.Initialize(this, ownerBall, direction, ballSpeed, bottomWallLayer, bottomWallGap);
+
+        return projectile;
     }
 
     public void ProjectileReturned(MultiBallProjectile projectile, Vector2 returnPosition)
