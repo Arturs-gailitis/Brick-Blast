@@ -599,7 +599,7 @@ public class LevelManager : MonoBehaviour
 
         skipNextRegularMove = ball != null && ball.TurnIsActive;
 
-        fullyClearedUI?.Show();
+        fullyClearedUI?.Show(fullyClearedBallMultiplier);
 
         while (ball != null && ball.TurnIsActive && !isChangingLevel && !isGameOver)
         {

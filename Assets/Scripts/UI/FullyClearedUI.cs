@@ -8,42 +8,44 @@ public class FullyClearedUI : MonoBehaviour
     [SerializeField] private GameObject messageObject;
     [SerializeField] private TMP_Text messageText;
 
+    [Header("Messages")]
+    [SerializeField] private string fullyClearedText = "FULLY CLEARED";
+    [SerializeField] private string ballsTextFormat;
+
     [Header("Text appearance")]
     [SerializeField] [Min(1f)] private float fontSize = 96f;
     [SerializeField] private FontStyles fontStyle = FontStyles.Bold;
-
-    [SerializeField] private Color textColor = Color.white;
+    [SerializeField] private Color fullyClearedColor = Color.white;
+    [SerializeField] private Color ballsBonusColor;
+    [SerializeField] [Range(10, 100)] private int ballsTextSizePercent = 65;
+    [SerializeField] private float lineSpacing = -10f;
 
     [Header("Animation")]
     [SerializeField] [Min(0.01f)] private float fadeInDuration = 0.18f;
-
     [SerializeField] [Min(0f)] private float holdDuration = 0.85f;
-
     [SerializeField] [Min(0.01f)] private float fadeOutDuration = 0.25f;
-
     [SerializeField] [Range(0.1f, 1f)] private float startScale = 0.45f;
-
     [SerializeField] [Min(1f)] private float overshootScale = 1.18f;
-
     [SerializeField] [Min(0.01f)] private float settleDuration = 0.12f;
 
     private Coroutine messageCoroutine;
-
     private RectTransform messageRectTransform;
     private CanvasGroup messageCanvasGroup;
 
     private void Awake()
     {
         FindReferences();
-        ApplyTextAppearance();
+
+        ApplyTextAppearance(fullyClearedText, fullyClearedColor);
+
         HideImmediate();
     }
 
-    public void Show()
+    public void Show(int ballMultiplier)
     {
         FindReferences();
 
-        if (messageObject == null)
+        if (messageObject == null || messageText == null)
         {
             return;
         }
@@ -53,7 +55,9 @@ public class FullyClearedUI : MonoBehaviour
             StopCoroutine(messageCoroutine);
         }
 
-        messageCoroutine = StartCoroutine(ShowMessageRoutine());
+        int safeMultiplier = Mathf.Max(1, ballMultiplier);
+
+        messageCoroutine = StartCoroutine(ShowMessageSequence(safeMultiplier));
     }
 
     public void HideImmediate()
@@ -80,11 +84,26 @@ public class FullyClearedUI : MonoBehaviour
         }
     }
 
-    private IEnumerator ShowMessageRoutine()
+    private IEnumerator ShowMessageSequence(int ballMultiplier)
     {
         messageObject.SetActive(true);
 
-        ApplyTextAppearance();
+        string ballsMessage = ballsTextFormat.Replace("{0}", ballMultiplier.ToString());
+
+        string ballsColorHex = ColorUtility.ToHtmlStringRGB(ballsBonusColor);
+
+        string combinedMessage = fullyClearedText + "\n" + "<size=" + ballsTextSizePercent + "%>" + "<color=#" + ballsColorHex +
+            ">" + ballsMessage + "</color>" + "</size>";
+
+        yield return StartCoroutine(PlaySingleMessage(combinedMessage, fullyClearedColor));
+
+        messageObject.SetActive(false);
+        messageCoroutine = null;
+    }
+
+    private IEnumerator PlaySingleMessage(string displayedText, Color displayedColor)
+    {
+        ApplyTextAppearance(displayedText, displayedColor);
 
         if (messageCanvasGroup != null)
         {
@@ -159,7 +178,7 @@ public class FullyClearedUI : MonoBehaviour
         {
             elapsedTime += Time.unscaledDeltaTime;
 
-            float progress = Mathf.Clamp01( elapsedTime / fadeOutDuration);
+            float progress = Mathf.Clamp01(elapsedTime / fadeOutDuration);
 
             float smoothProgress = Mathf.SmoothStep(0f, 1f, progress);
 
@@ -177,9 +196,6 @@ public class FullyClearedUI : MonoBehaviour
 
             yield return null;
         }
-
-        messageObject.SetActive(false);
-        messageCoroutine = null;
     }
 
     private void FindReferences()
@@ -220,25 +236,30 @@ public class FullyClearedUI : MonoBehaviour
         }
     }
 
-    private void ApplyTextAppearance()
+    private void ApplyTextAppearance(string displayedText, Color displayedColor)
     {
         if (messageText == null)
         {
             return;
         }
 
-        messageText.text = "FULLY CLEARED";
+        messageText.text = displayedText;
         messageText.fontSize = fontSize;
         messageText.fontStyle = fontStyle;
+
         messageText.alignment = TextAlignmentOptions.Center;
 
-        messageText.color = textColor;
+        messageText.color = displayedColor;
+        messageText.richText = true;
+        messageText.lineSpacing = lineSpacing;
+
         messageText.textWrappingMode = TextWrappingModes.NoWrap;
     }
 
     private void OnValidate()
     {
         FindReferences();
-        ApplyTextAppearance();
+
+        ApplyTextAppearance(fullyClearedText, fullyClearedColor);
     }
 }

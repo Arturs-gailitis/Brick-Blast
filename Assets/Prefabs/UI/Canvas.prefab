@@ -176,7 +176,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -75, y: 413}
-  m_SizeDelta: {x: 900, y: 180}
+  m_SizeDelta: {x: 900, y: 250}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5682592810572350541
 CanvasRenderer:
@@ -246,7 +246,7 @@ MonoBehaviour:
   m_characterSpacing: 0
   m_characterHorizontalScale: 1
   m_wordSpacing: 0
-  m_lineSpacing: 0
+  m_lineSpacing: -10
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
@@ -1114,9 +1114,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   messageObject: {fileID: 186202979265615963}
   messageText: {fileID: 2008364391130998795}
+  fullyClearedText: FULLY CLEARED
+  ballsTextFormat: NEXT MOVE - {0}x BALLS
   fontSize: 96
   fontStyle: 1
-  textColor: {r: 1, g: 1, b: 1, a: 1}
+  fullyClearedColor: {r: 1, g: 1, b: 1, a: 1}
+  ballsBonusColor: {r: 1, g: 1, b: 1, a: 1}
+  ballsTextSizePercent: 65
+  lineSpacing: -10
   fadeInDuration: 0.18
   holdDuration: 0.85
   fadeOutDuration: 0.25
