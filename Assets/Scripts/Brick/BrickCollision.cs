@@ -19,6 +19,8 @@ public class BrickCollision : MonoBehaviour
     private bool isDestroyed;
     private bool gameplayActive = true;
 
+    public bool IsDestroyed => isDestroyed;
+
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();

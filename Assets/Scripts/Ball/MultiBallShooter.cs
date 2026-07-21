@@ -12,7 +12,22 @@ public class MultiBallShooter : MonoBehaviour
     [SerializeField] [Min(0.01f)] private float distanceBetweenBalls = 0.8f;
 
     public bool ShotIsActive => shotIsActive;
-    public int BallsPerShot => Mathf.Max(1, ballsPerShot);
+
+    public int BallsPerShot
+    {
+        get
+        {
+            if (shotIsActive)
+            {
+                return Mathf.Max(1, currentShotBallCount);
+            }
+
+            int safeBaseBallCount = Mathf.Max(1, ballsPerShot);
+            int safeMultiplier = Mathf.Max(1, nextShotBallMultiplier);
+
+            return safeBaseBallCount * safeMultiplier;
+        }
+    }
 
     public event Action ShotFinished;
 
@@ -38,6 +53,8 @@ public class MultiBallShooter : MonoBehaviour
     private int spawnedBallCount;
     private int fixedStepCounter;
     private int fixedStepsBetweenBalls;
+    private int nextShotBallMultiplier = 1;
+    private int currentShotBallCount = 1;
 
     private void Awake()
     {
@@ -82,6 +99,10 @@ public class MultiBallShooter : MonoBehaviour
         spawnedBallCount = 0;
         fixedStepCounter = 0;
 
+        currentShotBallCount = Mathf.Max(1, ballsPerShot) * Mathf.Max(1, nextShotBallMultiplier);
+
+        nextShotBallMultiplier = 1;
+
         currentDirection = direction.normalized;
         currentBallSpeed = Mathf.Max(0.01f, ballSpeed);
         currentBottomWallLayer = bottomWallLayer;
@@ -113,7 +134,7 @@ public class MultiBallShooter : MonoBehaviour
             return;
         }
 
-        int safeBallCount = Mathf.Max(1, ballsPerShot);
+        int safeBallCount = Mathf.Max(1, currentShotBallCount);
 
         SpawnBall(currentDirection, currentBallSpeed, currentBottomWallLayer, currentBottomWallGap);
 
@@ -215,6 +236,23 @@ public class MultiBallShooter : MonoBehaviour
         else
         {
             CancelShot();
+        }
+    }
+
+    public void MultiplyNextShotBallCount(int multiplier)
+    {
+        int safeMultiplier = Mathf.Max(1, multiplier);
+
+        nextShotBallMultiplier = Mathf.Max(nextShotBallMultiplier, safeMultiplier);
+    }
+
+    public void ResetTemporaryBallCountBonus()
+    {
+        nextShotBallMultiplier = 1;
+
+        if (!shotIsActive)
+        {
+            currentShotBallCount = Mathf.Max(1, ballsPerShot);
         }
     }
 

@@ -27,6 +27,10 @@ public class LevelManager : MonoBehaviour
     [Header("Game over settings")]
     [SerializeField] [Min(0f)] private float gameOverDistanceFromBottomWall;
 
+    [Header("Fully cleared bonus")]
+    [SerializeField] [Min(1)] private int fullyClearedRowsToMove = 3;
+    [SerializeField] [Min(1)] private int fullyClearedBallMultiplier = 3;
+
     public int CurrentLevel { get; private set; }
     public bool IsGameOver => isGameOver;
 
@@ -35,6 +39,10 @@ public class LevelManager : MonoBehaviour
     private bool waitingForNextLevel;
     private bool isGameOver;
     private bool isMovingObjectsDown;
+
+    private bool fullyClearedBonusActive;
+    private bool skipNextRegularMove;
+
     private int attackStrengthAtLevelStart = 1;
     private int downMoveCounter = 0;
 
@@ -42,6 +50,7 @@ public class LevelManager : MonoBehaviour
     private GameOverUI gameOverUI;
     private PlayerBallTrajectory playerBall;
     private Collider2D bottomWall;
+    private FullyClearedUI fullyClearedUI;
 
     private void Awake()
     {
@@ -64,6 +73,13 @@ public class LevelManager : MonoBehaviour
 
         levelCompleteUI = FindFirstObjectByType<LevelCompleteUI>(FindObjectsInactive.Include);
         gameOverUI = FindFirstObjectByType<GameOverUI>(FindObjectsInactive.Include);
+
+        if (fullyClearedUI == null)
+        {
+            fullyClearedUI = FindFirstObjectByType<FullyClearedUI>(FindObjectsInactive.Include);
+        }
+
+        fullyClearedUI?.HideImmediate();
 
         if (levelCompleteUI != null)
         {
@@ -153,6 +169,7 @@ public class LevelManager : MonoBehaviour
 
         if (remainingBricks > 0)
         {
+            TryStartFullyClearedBonus();
             return;
         }
 
@@ -364,6 +381,8 @@ public class LevelManager : MonoBehaviour
             ApplyLevelStartAttackStrengthToBall();
         }
 
+        ResetFullyClearedBonus();
+
         CheckForGameOver();
     }
 
@@ -394,6 +413,7 @@ public class LevelManager : MonoBehaviour
         isChangingLevel = false;
         waitingForNextLevel = false;
         isGameOver = false;
+        isMovingObjectsDown = false;
 
         SetLevelCompletePanelVisible(false);
 
@@ -403,23 +423,23 @@ public class LevelManager : MonoBehaviour
         }
 
         ApplyLevelStartAttackStrengthToBall();
+        ResetFullyClearedBonus();
 
         CheckForGameOver();
     }
 
     public void MoveAllBricksDown()
     {
-        if (isChangingLevel || isGameOver || isMovingObjectsDown)
+        if (skipNextRegularMove)
         {
+            skipNextRegularMove = false;
             return;
         }
 
-        StartCoroutine(MoveAllObjectsDownSmooth());
-    }
-
-    private IEnumerator MoveAllObjectsDownSmooth()
-    {
-        isMovingObjectsDown = true;
+        if (isChangingLevel || isGameOver || isMovingObjectsDown || fullyClearedBonusActive)
+        {
+            return;
+        }
 
         int safeMovesBeforeNewRow = Mathf.Max(1, movesBeforeNewRow);
 
@@ -435,24 +455,35 @@ public class LevelManager : MonoBehaviour
             }
         }
 
+        StartCoroutine(MoveAllObjectsDownSmooth(moveDownDistance, true));
+    }
+
+    private IEnumerator MoveAllObjectsDownSmooth(float moveDownDistance, bool updateRegularMoveCounter)
+    {
+        isMovingObjectsDown = true;
+
+        int safeMovesBeforeNewRow = Mathf.Max(1, movesBeforeNewRow);
+
+        moveDownDistance = Mathf.Max(0f, moveDownDistance);
+
         BrickCollision[] bricks = FindObjectsByType<BrickCollision>(FindObjectsSortMode.None);
 
         Vector3[] startPositions = new Vector3[bricks.Length];
+
         Vector3[] targetPositions = new Vector3[bricks.Length];
 
         for (int i = 0; i < bricks.Length; i++)
         {
             startPositions[i] = bricks[i].transform.position;
 
-            targetPositions[i] = startPositions[i] + Vector3.down * moveDownDistance;
-        }
+            targetPositions[i] = startPositions[i] + Vector3.down * moveDownDistance;}
 
         Coroutine abilityMoveCoroutine = null;
 
         if (abilitySpawner != null)
         {
             abilityMoveCoroutine = StartCoroutine(abilitySpawner.MoveAllAbilitiesDownSmooth(moveDownDistance,
-                    brickMoveDownDuration));
+                brickMoveDownDuration));
         }
 
         float elapsedTime = 0f;
@@ -495,16 +526,138 @@ public class LevelManager : MonoBehaviour
             yield return abilityMoveCoroutine;
         }
 
-        downMoveCounter++;
-
-        if (downMoveCounter >= safeMovesBeforeNewRow)
+        if (updateRegularMoveCounter)
         {
-            downMoveCounter = 0;
+            downMoveCounter++;
+
+            if (downMoveCounter >= safeMovesBeforeNewRow)
+            {
+                downMoveCounter = 0;
+            }
         }
 
         isMovingObjectsDown = false;
 
         CheckForGameOver();
+    }
+
+    private void TryStartFullyClearedBonus()
+    {
+        if (fullyClearedBonusActive || isChangingLevel || isGameOver)
+        {
+            return;
+        }
+
+        if (!OnlyHiddenBricksRemain())
+        {
+            return;
+        }
+
+        StartCoroutine(HandleFullyClearedBonus());
+    }
+
+    private bool OnlyHiddenBricksRemain()
+    {
+        BrickCollision[] bricks = FindObjectsByType<BrickCollision>(FindObjectsSortMode.None);
+
+        bool hasHiddenBrick = false;
+
+        foreach (BrickCollision brick in bricks)
+        {
+            if (brick == null || brick.IsDestroyed)
+            {
+                continue;
+            }
+
+            HiddenRowDepth hiddenRowDepth = brick.GetComponent<HiddenRowDepth>();
+
+            bool isHidden = hiddenRowDepth != null && hiddenRowDepth.IsHidden;
+
+            if (!isHidden)
+            {
+                return false;
+            }
+
+            hasHiddenBrick = true;
+        }
+
+        return hasHiddenBrick;
+    }
+
+    private IEnumerator HandleFullyClearedBonus()
+    {
+        fullyClearedBonusActive = true;
+
+        PlayerBallTrajectory ball = GetPlayerBall();
+
+        MultiBallShooter shooter = ball != null ? ball.GetComponent<MultiBallShooter>() : null;
+
+        if (shooter != null)
+        {
+            shooter.MultiplyNextShotBallCount(fullyClearedBallMultiplier);
+        }
+
+        skipNextRegularMove = ball != null && ball.TurnIsActive;
+
+        fullyClearedUI?.Show();
+
+        while (ball != null && ball.TurnIsActive && !isChangingLevel && !isGameOver)
+        {
+            yield return null;
+        }
+
+        if (isChangingLevel || isGameOver)
+        {
+            skipNextRegularMove = false;
+            fullyClearedBonusActive = false;
+            yield break;
+        }
+
+        float moveDownDistance = GetFullRowStep() * Mathf.Max(1, fullyClearedRowsToMove);
+
+        downMoveCounter = 0;
+
+        yield return StartCoroutine(MoveAllObjectsDownSmooth(moveDownDistance, false));
+
+        skipNextRegularMove = false;
+        fullyClearedBonusActive = false;
+    }
+
+    private float GetFullRowStep()
+    {
+        if (brickSpawner != null)
+        {
+            float rowStep = brickSpawner.GetRowStep();
+
+            if (rowStep > 0f)
+            {
+                return rowStep;
+            }
+        }
+
+        return Mathf.Max(0f, brickMoveDownDistance) * Mathf.Max(1, movesBeforeNewRow);
+    }
+
+    private void ResetFullyClearedBonus()
+    {
+        fullyClearedBonusActive = false;
+        skipNextRegularMove = false;
+
+        fullyClearedUI?.HideImmediate();
+
+        PlayerBallTrajectory ball = GetPlayerBall();
+
+        if (ball == null)
+        {
+            return;
+        }
+
+        MultiBallShooter shooter = ball.GetComponent<MultiBallShooter>();
+
+        if (shooter != null)
+        {
+            shooter.ResetTemporaryBallCountBonus();
+        }
     }
 
     private void CheckForGameOver()
@@ -555,6 +708,8 @@ public class LevelManager : MonoBehaviour
         {
             GameSaveManager.SaveBallAttackStrength(1);
         }
+
+        ResetFullyClearedBonus();
 
         if (gameOverUI != null)
         {
