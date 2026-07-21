@@ -4,7 +4,8 @@ public class BrickDestroyEffect : MonoBehaviour
 {
     [Header("Destroy effect")]
     [SerializeField] private GameObject destroyEffectPrefab;
-    [SerializeField] private float effectScale = 1.6f;
+    [SerializeField] private float effectScale;
+    [SerializeField] [Range(0.1f, 1f)] private float durationMultiplier = 0.5f;
     [SerializeField] [Min(0f)] private float extraLifetime = 0.5f;
 
     [Header("Visual settings")]
@@ -47,7 +48,11 @@ public class BrickDestroyEffect : MonoBehaviour
 
             main.loop = false;
 
-            effectLifetime = Mathf.Max(effectLifetime, main.duration + main.startLifetime.constantMax);
+            main.simulationSpeed = 1f / durationMultiplier;
+
+            float particleLifetime = (main.duration + main.startLifetime.constantMax) * durationMultiplier;
+
+            effectLifetime = Mathf.Max(effectLifetime, particleLifetime);
 
             if (tintParticlesWithBrickColor && brickRenderer != null)
             {
@@ -71,9 +76,9 @@ public class BrickDestroyEffect : MonoBehaviour
 
         if (effectLifetime <= 0f)
         {
-            effectLifetime = 2f;
+            effectLifetime = 2f * durationMultiplier;
         }
 
-        Destroy(effectObject, effectLifetime + extraLifetime);
+        Destroy(effectObject, effectLifetime + extraLifetime * durationMultiplier);
     }
 }
