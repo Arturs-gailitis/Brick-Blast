@@ -6,7 +6,8 @@ public class DirectionAbility : MonoBehaviour
     [Header("Ball settings")]
     [SerializeField] private float defaultBallSpeed = 8f;
 
-    private int aim = 2;
+    private readonly List<int> directionOrder = new List<int> { 1, 2, 3 };
+    private int nextDirectionIndex;
 
     private readonly HashSet<int> affectedBallIds = new HashSet<int>();
 
@@ -17,24 +18,13 @@ public class DirectionAbility : MonoBehaviour
 
     public void Configure(AbilityConfig config)
     {
-        if (config == null)
-        {
-            return;
-        }
-
-        if (config.aim >= 1 && config.aim <= 3)
-        {
-            aim = config.aim;
-        }
-        else
-        {
-            aim = Random.Range(1, 4);
-        }
-
         affectedBallIds.Clear();
 
         hasBeenUsedByMainBall = false;
         isWaitingForMultiBallShotToEnd = false;
+
+        nextDirectionIndex = 0;
+        ShuffleDirections();
 
         UnregisterMultiBallShooter();
     }
@@ -126,7 +116,8 @@ public class DirectionAbility : MonoBehaviour
             return;
         }
 
-        Vector2 newDirection = GetDirectionFromAim(aim);
+        int selectedAim = GetNextAim();
+        Vector2 newDirection = GetDirectionFromAim(selectedAim);
 
         float currentSpeed = ballRigidbody.linearVelocity.magnitude;
 
@@ -228,6 +219,32 @@ public class DirectionAbility : MonoBehaviour
         }
     }
 
+    private int GetNextAim()
+    {
+        if (nextDirectionIndex >= directionOrder.Count)
+        {
+            nextDirectionIndex = 0;
+            ShuffleDirections();
+        }
+
+        int selectedAim = directionOrder[nextDirectionIndex];
+        nextDirectionIndex++;
+
+        return selectedAim;
+    }
+
+    private void ShuffleDirections()
+    {
+        for (int i = directionOrder.Count - 1; i > 0; i--)
+        {
+            int randomIndex = Random.Range(0, i + 1);
+
+            int temporaryDirection = directionOrder[i];
+            directionOrder[i] = directionOrder[randomIndex];
+            directionOrder[randomIndex] = temporaryDirection;
+        }
+    }
+
     public SavedAbilityData CreateSaveData()
     {
         if (hasBeenUsedByMainBall || isWaitingForMultiBallShotToEnd)
@@ -237,7 +254,7 @@ public class DirectionAbility : MonoBehaviour
 
         return new SavedAbilityData
         {
-            abilityType = "direction", x = transform.position.x, y = transform.position.y, value = 1, aim = aim
+            abilityType = "direction", x = transform.position.x, y = transform.position.y, value = 1, aim = 0
         };
     }
 
