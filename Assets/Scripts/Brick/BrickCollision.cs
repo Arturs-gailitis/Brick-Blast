@@ -207,6 +207,11 @@ public class BrickCollision : MonoBehaviour
             brickDestroyEffect.Play();
         }
 
+        if (ScreenShake.Instance != null)
+        {
+            ScreenShake.Instance.Shake();
+        }
+
         Destroy(gameObject);
     }
 
