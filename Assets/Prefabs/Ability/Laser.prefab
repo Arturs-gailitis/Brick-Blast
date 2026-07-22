@@ -190,6 +190,7 @@ GameObject:
   - component: {fileID: 7345808452597781619}
   - component: {fileID: 7238630893937069609}
   - component: {fileID: 9065946708581732355}
+  - component: {fileID: 5790742662413855790}
   m_Layer: 0
   m_Name: Laser
   m_TagString: Untagged
@@ -322,9 +323,14 @@ MonoBehaviour:
   previewTextXOffset: -0.016
   previewTextYOffset: 0.04
   rowColumnTolerance: 0.35
-  defaultBeamVisibleSeconds: 0.12
   beamDistance: 20
   beamWidth: 0.08
+  beamColor: {r: 0, g: 1, b: 1, a: 1}
+  beamFadeInSeconds: 0.035
+  beamHoldSeconds: 0.04
+  beamFadeOutSeconds: 0.14
+  beamStartWidthMultiplier: 0.2
+  beamFlashWidthMultiplier: 1.8
   topWallName: TopWall
   bottomWallName: ButtomWall
 --- !u!114 &9065946708581732355
@@ -342,3 +348,18 @@ MonoBehaviour:
   hitSound: {fileID: 8300000, guid: 49419e9675bd5984fb81f8aef0dd475d, type: 3}
   volume: 0.6
   playOnEveryHit: 1
+--- !u!114 &5790742662413855790
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4656815003314491021}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: feff68717094c6d4280b0e38ed8dcf7b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  duration: 0.25
+  endScaleMultiplier: 0.1
+  rotationDegrees: 120

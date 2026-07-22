@@ -118,21 +118,7 @@ public class PowerAbility : MonoBehaviour
 
     private void HideAbilityObject()
     {
-        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
-
-        if (spriteRenderer != null)
-        {
-            spriteRenderer.enabled = false;
-        }
-
-        Collider2D abilityCollider = GetComponent<Collider2D>();
-
-        if (abilityCollider != null)
-        {
-            abilityCollider.enabled = false;
-        }
-
-        Destroy(gameObject);
+        AbilityDisappearAnimation.Play(gameObject);
     }
 
     public SavedAbilityData CreateSaveData()

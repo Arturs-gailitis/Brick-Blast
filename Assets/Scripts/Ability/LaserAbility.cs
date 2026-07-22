@@ -356,26 +356,7 @@ public class LaserAbility : MonoBehaviour
     {
         UnregisterMultiBallShooter();
 
-        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
-
-        if (spriteRenderer != null)
-        {
-            spriteRenderer.enabled = false;
-        }
-
-        Collider2D abilityCollider = GetComponent<Collider2D>();
-
-        if (abilityCollider != null)
-        {
-            abilityCollider.enabled = false;
-        }
-
-        if (aimPreviewText != null)
-        {
-            aimPreviewText.gameObject.SetActive(false);
-        }
-
-        Destroy(gameObject);
+        AbilityDisappearAnimation.Play(gameObject);
     }
 
     private void FindPreviewTextIfNeeded()

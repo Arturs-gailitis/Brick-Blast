@@ -237,26 +237,7 @@ public class TripleBallAbility : MonoBehaviour
     {
         UnregisterMultiBallShooter();
 
-        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
-
-        if (spriteRenderer != null)
-        {
-            spriteRenderer.enabled = false;
-        }
-
-        Collider2D abilityCollider = GetComponent<Collider2D>();
-
-        if (abilityCollider != null)
-        {
-            abilityCollider.enabled = false;
-        }
-
-        if (previewText != null)
-        {
-            previewText.gameObject.SetActive(false);
-        }
-
-        Destroy(gameObject);
+        AbilityDisappearAnimation.Play(gameObject);
     }
 
     public SavedAbilityData CreateSaveData()

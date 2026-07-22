@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 4207273091743133475}
   - component: {fileID: 2942640043904517469}
   - component: {fileID: 2931326733919060976}
+  - component: {fileID: 8907308008126583327}
   m_Layer: 0
   m_Name: Direction
   m_TagString: Untagged
@@ -155,6 +156,21 @@ MonoBehaviour:
   hitSound: {fileID: 8300000, guid: 1ab26e0c3f20d1a4a94a3f800e946759, type: 3}
   volume: 0.4
   playOnEveryHit: 0
+--- !u!114 &8907308008126583327
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 835050101104889381}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: feff68717094c6d4280b0e38ed8dcf7b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  duration: 0.25
+  endScaleMultiplier: 0.1
+  rotationDegrees: 120
 --- !u!1 &1281989720766216611
 GameObject:
   m_ObjectHideFlags: 0

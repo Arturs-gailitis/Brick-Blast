@@ -190,6 +190,7 @@ GameObject:
   - component: {fileID: 7185591074104437964}
   - component: {fileID: 8984120918414183379}
   - component: {fileID: -4468282326860772338}
+  - component: {fileID: 8018345480693980204}
   m_Layer: 0
   m_Name: Power
   m_TagString: Untagged
@@ -333,3 +334,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hitSound: {fileID: 8300000, guid: 46b90c8f74b8ea2409ce3c8d855c0381, type: 3}
   volume: 0.6
+  playOnEveryHit: 0
+--- !u!114 &8018345480693980204
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8401951411293255244}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: feff68717094c6d4280b0e38ed8dcf7b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  duration: 0.25
+  endScaleMultiplier: 0.1
+  rotationDegrees: 120
