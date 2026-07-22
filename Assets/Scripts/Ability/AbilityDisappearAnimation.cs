@@ -6,8 +6,9 @@ public class AbilityDisappearAnimation : MonoBehaviour
 {
     [Header("Disappear animation")]
     [SerializeField] [Min(0.01f)] private float duration = 0.25f;
+    [SerializeField] [Min(1f)] private float popScaleMultiplier = 1.25f;
+    [SerializeField] [Range(0.05f, 0.9f)] private float popDurationPercent = 0.3f;
     [SerializeField] [Range(0f, 1f)] private float endScaleMultiplier = 0.1f;
-    [SerializeField] private float rotationDegrees = 120f;
 
     private SpriteRenderer[] spriteRenderers;
     private Color[] spriteStartColors;
@@ -94,39 +95,63 @@ public class AbilityDisappearAnimation : MonoBehaviour
     {
         Vector3 startScale = transform.localScale;
 
-        Vector3 endScale = startScale * endScaleMultiplier;
+        Vector3 popScale = startScale * Mathf.Max(1f, popScaleMultiplier);
 
-        Quaternion startRotation = transform.localRotation;
-
-        Quaternion endRotation = startRotation * Quaternion.Euler(0f, 0f, rotationDegrees);
+        Vector3 endScale = startScale * Mathf.Clamp01(endScaleMultiplier);
 
         float safeDuration = Mathf.Max(0.01f, duration);
 
-        float elapsedTime = 0f;
+        float safePopPercent = Mathf.Clamp(popDurationPercent, 0.05f, 0.9f);
 
-        while (elapsedTime < safeDuration)
-        {
-            elapsedTime += Time.deltaTime;
+        float popDuration = safeDuration * safePopPercent;
 
-            float progress = Mathf.Clamp01(elapsedTime / safeDuration);
+        float shrinkDuration = safeDuration - popDuration;
 
-            float smoothProgress = Mathf.SmoothStep(0f, 1f, progress);
+        yield return AnimateScaleStage(startScale, popScale, popDuration, 1f, 1f);
 
-            transform.localScale = Vector3.Lerp(startScale, endScale, smoothProgress);
-
-            transform.localRotation = Quaternion.Lerp(startRotation, endRotation, smoothProgress);
-
-            SetVisualAlpha(1f - smoothProgress);
-
-            yield return null;
-        }
+        yield return AnimateScaleStage(popScale, endScale, shrinkDuration, 1f, 0f);
 
         transform.localScale = endScale;
-        transform.localRotation = endRotation;
 
         SetVisualAlpha(0f);
 
         Destroy(gameObject);
+    }
+
+    private IEnumerator AnimateScaleStage(Vector3 fromScale, Vector3 toScale, float stageDuration, float fromAlpha,
+        float toAlpha)
+    {
+        if (stageDuration <= 0f)
+        {
+            transform.localScale = toScale;
+
+            SetVisualAlpha(toAlpha);
+
+            yield break;
+        }
+
+        float elapsedTime = 0f;
+
+        while (elapsedTime < stageDuration)
+        {
+            elapsedTime += Time.deltaTime;
+
+            float progress = Mathf.Clamp01(elapsedTime / stageDuration);
+
+            float smoothProgress = Mathf.SmoothStep(0f, 1f, progress);
+
+            transform.localScale = Vector3.LerpUnclamped(fromScale, toScale, smoothProgress);
+
+            float currentAlpha = Mathf.Lerp(fromAlpha, toAlpha, smoothProgress);
+
+            SetVisualAlpha(currentAlpha);
+
+            yield return null;
+        }
+
+        transform.localScale = toScale;
+
+        SetVisualAlpha(toAlpha);
     }
 
     private void SetVisualAlpha(float alphaMultiplier)
