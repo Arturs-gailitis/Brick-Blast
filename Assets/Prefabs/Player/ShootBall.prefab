@@ -285,3 +285,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 12a42360c7a3e174fbea4b02a137d9df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  exitSpeed: 12
+  outsideScreenMargin: 0.2
+  fallbackExitDistance: 2
+  behindBottomWallZOffset: 0.05

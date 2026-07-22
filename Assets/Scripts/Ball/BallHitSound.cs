@@ -1,12 +1,11 @@
 using UnityEngine;
 
-[RequireComponent(typeof(AudioSource))]
 public class BallHitSound : MonoBehaviour
 {
-    [Header("Wall sound")]
+    [Header("Impact sound")]
     [SerializeField] private LayerMask wallLayers;
     [SerializeField] private AudioClip wallHitClip;
-    [SerializeField] [Range(0f, 1f)] private float volume = 0.7f;
+    [SerializeField] [Range(0f, 1f)] private float volume;
 
     [Header("Wall particle effect")]
     [SerializeField] private ParticleSystem wallHitParticlePrefab;
@@ -14,39 +13,40 @@ public class BallHitSound : MonoBehaviour
     [SerializeField] [Min(0f)] private float particleDestroyDelay = 0.1f;
 
     [Header("Impact settings")]
-    [SerializeField] [Min(0f)] private float minimumHitSpeed = 1f;
+    [SerializeField] [Min(0f)] private float minimumHitSpeed = 0.1f;
 
-    private AudioSource audioSource;
+    private static AudioSource sharedImpactAudioSource;
+    private AudioSource localAudioSource;
+    private Rigidbody2D ballRigidbody;
 
     private void Awake()
     {
-        audioSource = GetComponent<AudioSource>();
+        localAudioSource = GetComponent<AudioSource>();
+        ballRigidbody = GetComponent<Rigidbody2D>();
 
-        if (audioSource == null)
-        {
-            audioSource = gameObject.AddComponent<AudioSource>();
-        }
-
-        audioSource.playOnAwake = false;
-        audioSource.loop = false;
-        audioSource.Stop();
+        ConfigureLocalAudioSource();
+        EnsureSharedImpactAudioSource();
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
         int hitLayer = collision.collider.gameObject.layer;
 
-        if ((wallLayers.value & (1 << hitLayer)) == 0)
+        bool isValidImpactLayer = (wallLayers.value & (1 << hitLayer)) != 0;
+
+        if (!isValidImpactLayer)
         {
             return;
         }
 
-        if (collision.relativeVelocity.magnitude < minimumHitSpeed)
+        float hitSpeed = GetReliableHitSpeed(collision);
+
+        if (hitSpeed < minimumHitSpeed)
         {
             return;
         }
 
-        PlayWallHitSound();
+        PlayImpactSound();
 
         if (TryGetSideOrTopWallContact(collision, out ContactPoint2D contact))
         {
@@ -54,14 +54,108 @@ public class BallHitSound : MonoBehaviour
         }
     }
 
-    private void PlayWallHitSound()
+    private float GetReliableHitSpeed(Collision2D collision)
+    {
+        float relativeHitSpeed = collision.relativeVelocity.magnitude;
+
+        if (ballRigidbody == null)
+        {
+            return relativeHitSpeed;
+        }
+
+        float currentBallSpeed = ballRigidbody.linearVelocity.magnitude;
+
+        return Mathf.Max(relativeHitSpeed, currentBallSpeed);
+    }
+
+    private void PlayImpactSound()
     {
         if (wallHitClip == null)
         {
             return;
         }
 
-        audioSource.PlayOneShot(wallHitClip, volume);
+        EnsureSharedImpactAudioSource();
+
+        if (sharedImpactAudioSource == null)
+        {
+            return;
+        }
+
+        SyncMuteState();
+
+        if (sharedImpactAudioSource.mute || AudioListener.pause)
+        {
+            return;
+        }
+
+        sharedImpactAudioSource.PlayOneShot(wallHitClip, volume);
+    }
+
+    private void ConfigureLocalAudioSource()
+    {
+        if (localAudioSource == null)
+        {
+            return;
+        }
+
+        localAudioSource.playOnAwake = false;
+        localAudioSource.loop = false;
+
+        localAudioSource.spatialBlend = 0f;
+        localAudioSource.dopplerLevel = 0f;
+
+        localAudioSource.Stop();
+    }
+
+    private void EnsureSharedImpactAudioSource()
+    {
+        if (sharedImpactAudioSource != null)
+        {
+            return;
+        }
+
+        GameObject audioObject = new GameObject("Ball Impact Audio Source");
+
+        DontDestroyOnLoad(audioObject);
+
+        sharedImpactAudioSource = audioObject.AddComponent<AudioSource>();
+
+        sharedImpactAudioSource.playOnAwake = false;
+        sharedImpactAudioSource.loop = false;
+
+        sharedImpactAudioSource.volume = 1f;
+        sharedImpactAudioSource.pitch = 1f;
+
+        sharedImpactAudioSource.priority = 0;
+
+        sharedImpactAudioSource.spatialBlend = 0f;
+        sharedImpactAudioSource.dopplerLevel = 0f;
+
+        if (localAudioSource == null)
+        {
+            return;
+        }
+
+        sharedImpactAudioSource.outputAudioMixerGroup = localAudioSource.outputAudioMixerGroup;
+
+        sharedImpactAudioSource.bypassEffects = localAudioSource.bypassEffects;
+
+        sharedImpactAudioSource.bypassListenerEffects = localAudioSource.bypassListenerEffects;
+
+        sharedImpactAudioSource.bypassReverbZones = localAudioSource.bypassReverbZones;
+
+        sharedImpactAudioSource.mute = localAudioSource.mute;
+    }
+
+    private void SyncMuteState()
+    {
+        if (sharedImpactAudioSource == null || localAudioSource == null)
+        {
+            return;
+        }
+
+        sharedImpactAudioSource.mute = localAudioSource.mute;
     }
 
     private bool TryGetSideOrTopWallContact(Collision2D collision, out ContactPoint2D selectedContact)
