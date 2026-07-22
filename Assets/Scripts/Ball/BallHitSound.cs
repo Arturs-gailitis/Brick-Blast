@@ -6,6 +6,8 @@ public class BallHitSound : MonoBehaviour
     [SerializeField] private LayerMask wallLayers;
     [SerializeField] private AudioClip wallHitClip;
     [SerializeField] [Range(0f, 1f)] private float volume;
+    [SerializeField] [Range(0, 256)] private int impactAudioPriority = 180;
+    [SerializeField] [Min(0f)] private float minimumSoundInterval = 0.03f;
 
     [Header("Wall particle effect")]
     [SerializeField] private ParticleSystem wallHitParticlePrefab;
@@ -18,6 +20,8 @@ public class BallHitSound : MonoBehaviour
     private static AudioSource sharedImpactAudioSource;
     private AudioSource localAudioSource;
     private Rigidbody2D ballRigidbody;
+    
+    private static float nextAllowedImpactSoundTime;
 
     private void Awake()
     {
@@ -46,12 +50,13 @@ public class BallHitSound : MonoBehaviour
             return;
         }
 
-        PlayImpactSound();
-
-        if (TryGetSideOrTopWallContact(collision, out ContactPoint2D contact))
+        if (!TryGetSideOrTopWallContact(collision, out ContactPoint2D contact))
         {
-            PlayWallHitParticles(contact);
+            return;
         }
+
+        PlayImpactSound();
+        PlayWallHitParticles(contact);
     }
 
     private float GetReliableHitSpeed(Collision2D collision)
@@ -89,6 +94,13 @@ public class BallHitSound : MonoBehaviour
             return;
         }
 
+        if (Time.unscaledTime < nextAllowedImpactSoundTime)
+        {
+            return;
+        }
+
+        nextAllowedImpactSoundTime = Time.unscaledTime + minimumSoundInterval;
+
         sharedImpactAudioSource.PlayOneShot(wallHitClip, volume);
     }
 
@@ -110,27 +122,25 @@ public class BallHitSound : MonoBehaviour
 
     private void EnsureSharedImpactAudioSource()
     {
-        if (sharedImpactAudioSource != null)
+        if (sharedImpactAudioSource == null)
         {
-            return;
+            GameObject audioObject = new GameObject("Ball Impact Audio Source");
+
+            DontDestroyOnLoad(audioObject);
+
+            sharedImpactAudioSource = audioObject.AddComponent<AudioSource>();
+
+            sharedImpactAudioSource.playOnAwake = false;
+            sharedImpactAudioSource.loop = false;
+
+            sharedImpactAudioSource.volume = 1f;
+            sharedImpactAudioSource.pitch = 1f;
+
+            sharedImpactAudioSource.spatialBlend = 0f;
+            sharedImpactAudioSource.dopplerLevel = 0f;
         }
 
-        GameObject audioObject = new GameObject("Ball Impact Audio Source");
-
-        DontDestroyOnLoad(audioObject);
-
-        sharedImpactAudioSource = audioObject.AddComponent<AudioSource>();
-
-        sharedImpactAudioSource.playOnAwake = false;
-        sharedImpactAudioSource.loop = false;
-
-        sharedImpactAudioSource.volume = 1f;
-        sharedImpactAudioSource.pitch = 1f;
-
-        sharedImpactAudioSource.priority = 0;
-
-        sharedImpactAudioSource.spatialBlend = 0f;
-        sharedImpactAudioSource.dopplerLevel = 0f;
+        sharedImpactAudioSource.priority = Mathf.Clamp(impactAudioPriority, 0, 256);
 
         if (localAudioSource == null)
         {
